@@ -1,15 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-startup>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f1e7" />
     <meta name="description" content="Real chess. Deeply unserious characters. Nine playable lessons, from knight forks to en passant and back-rank mate." />
     <title>Holy Hell! — Tiny moves. Big nonsense.</title>
+    <style>html[data-startup], html[data-startup] body { background: #000; } html[data-startup] #app { visibility: hidden; }</style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/entry.ts"></script>
   </body>
 </html>
