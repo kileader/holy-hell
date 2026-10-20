@@ -2,9 +2,9 @@
 
 ## Automated checks
 
-- `npm test`: 96 passing tests.
+- `npm test`: 119 passing tests.
 - `npm run build`: TypeScript check and Vite production build pass.
-- All nine starting FENs are valid, have White to move, and do not place the nonmoving black king in check. Check Yourself intentionally starts with White in check.
+- All thirteen starting FENs are valid, have White to move, and do not place the nonmoving black king in check. Check Yourself intentionally starts with White in check.
 - Each authored solution clears its objective against the actual deterministic opponent. The initial knight fork also wins the rook after every legal king defense.
 - Rules integration covers illegal moves, turn ownership, check, checkmate, stalemate, castling, en passant, and all four promotion choices.
 - Recovery checks cover undo before/after a reply, captured mission pieces, promotion reversal, and search preserving move history.
@@ -19,6 +19,9 @@
 - Shared splash checks preserve the 2.4-second sine fade sequence and copied controller button states, including held and newly connected controllers.
 - Menu traversal checks visit and wrap through every enabled control in both directions across varying panel sizes, and recover from missing focus or empty control lists.
 - Startup selection checks cover fresh saves, every partial campaign including an unfinished ninth encounter, and a fully cleared campaign returning to encounter one without changing its stars or unlocks.
+- Strategy checks cover the bishop-for-rook exchange including the recapture and net material change; opening and developing a supported bishop; either central pawn creating a protected passer; passed-pawn blockers ahead versus behind; and the supported space advance. Goals wait for Black's reply. A greedy capture in Room Service is punished by Nxd5; Undo restores the supported alternative. Live hints solve all four additions, and the development hint updates once the diagonal opens.
+- Victories after an opponent reply retain highlights for both the player's achievement and that reply, including a bishop that was recaptured during a favorable exchange.
+- Existing nine-encounter saves keep clears and stars, then unlock Bishop Stonks. Complete saves of thirteen encounters reopen the first lesson with all unlocks intact.
 
 ## Browser checks
 
@@ -53,6 +56,8 @@ Tested in the Codex in-app browser:
 - Reproduced the completed-save startup bug locally: nine saved clears opened the ninth boss. After the fix, the same save opened Horsie Havoc with a Replay 01 label on full reload; encounter selection still showed 9/9 clears and the earned stars.
 - Added `/tests/board-render.html` as a development-only real-browser regression. Before the sizing fix, selection inside an animation frame collapsed the board from 462px to its 20px border/padding minimum before the next frame. Rendering now fits the board synchronously, before a controller frame can paint it collapsed.
 - The repaint regression passes at 1280×720 (462px board), 320×568 (296px), and 844×390 (254px), including four selections, a legal move, and Undo within one animation frame. Browser warning/error logs were empty.
+- Played Bishop Stonks, Bishop Unboxed, Chain Reaction, and Room Service through the 320×568 interface. Confirmed the bishop capture and recapture, actual bishop development to f4, pawn support on d5, and the e5 advance. Tried the tempting exd5, observed Nxd5 and its recovery prompt, then used Undo and completed the space objective. The new mission, lesson, and victory panels fit without internal scrolling.
+- Confirmed 13/13 saved clears, all seven encounter-selection pages, and the updated completion panel. Inspected the ivory bishop at 1280×720, checked the development lesson at 844×390, and reran the controller-frame repaint regression successfully. Browser warning/error logs were empty.
 
 ## Still needs Kevin's playtest
 

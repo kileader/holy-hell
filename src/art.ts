@@ -35,6 +35,7 @@ export function pieceSvg(type: PieceSymbol, color: 'w' | 'b'): string {
 }
 
 export function characterArt(id: Portrait): string {
+  if (id === 'white-bishop') return bishopSniperArt(true);
   if (id === 'bishop') return bishopSniperArt();
   if (id === 'king') return kingArt();
   if (id === 'rook' || id === 'baron') return rookArt(id === 'baron');
@@ -202,13 +203,13 @@ function royalPawnArt(): string {
   </svg>`;
 }
 
-function bishopSniperArt(): string {
+function bishopSniperArt(friendly = false): string {
   const paintId = `sniper-${++sniperSequence}`;
-  return `<svg class="character-art sniper-art" viewBox="0 0 300 300" role="img" aria-label="Bishop Deadeye, an armored sniper in a crimson bishop’s mitre and a torn cloak, carrying a long scoped rifle">
+  return `<svg class="character-art sniper-art" viewBox="0 0 300 300" role="img" aria-label="${friendly ? 'Bishop Crossfire, your white bishop in ivory armor, a white cloak and a gold-trimmed bishop hat, carrying a scoped rifle' : 'Bishop Deadeye, an armored sniper in a crimson bishop’s mitre and a torn cloak, carrying a long scoped rifle'}">
     <defs>
       <radialGradient id="${paintId}-halo"><stop stop-color="#d84432" stop-opacity=".38"/><stop offset="1" stop-color="#d84432" stop-opacity="0"/></radialGradient>
-      <linearGradient id="${paintId}-cloak" x2=".8" y2="1"><stop stop-color="#52635b"/><stop offset="1" stop-color="#15231f"/></linearGradient>
-      <linearGradient id="${paintId}-mitre" x2="1" y2="1"><stop stop-color="#ff7753"/><stop offset=".55" stop-color="#c82c2c"/><stop offset="1" stop-color="#7f2029"/></linearGradient>
+      <linearGradient id="${paintId}-cloak" x2=".8" y2="1"><stop stop-color="${friendly ? '#fff9e9' : '#52635b'}"/><stop offset="1" stop-color="${friendly ? '#b7c4b6' : '#15231f'}"/></linearGradient>
+      <linearGradient id="${paintId}-mitre" x2="1" y2="1"><stop stop-color="${friendly ? '#fff7dc' : '#ff7753'}"/><stop offset=".55" stop-color="${friendly ? '#e9e2c4' : '#c82c2c'}"/><stop offset="1" stop-color="${friendly ? '#b7b99a' : '#7f2029'}"/></linearGradient>
     </defs>
     <rect width="300" height="300" rx="8" fill="#111d19"/>
     <circle cx="154" cy="138" r="131" fill="url(#${paintId}-halo)"/>
@@ -218,9 +219,9 @@ function bishopSniperArt(): string {
     </g>
     <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
       <path d="m113 133-39 33-28 107 51-14 18 23 27-17 40 18 20-20 47 10-25-101-43-38Z" fill="url(#${paintId}-cloak)"/>
-      <path d="m109 135-30 24-7 38 28-9 15-29m64-23 32 25 10 39-34-12-16-29" fill="#788773"/>
+      <path d="m109 135-30 24-7 38 28-9 15-29m64-23 32 25 10 39-34-12-16-29" fill="${friendly ? '#f2ecd5' : '#788773'}"/>
       <path d="m92 163 10 5m-18 8 12 5m99-16-10 6m19 7-13 6" stroke="#b7baa0" stroke-width="2"/>
-      <path d="m114 159 7 86 22 18 34-21 9-82" fill="#22362d"/>
+      <path d="m114 159 7 86 22 18 34-21 9-82" fill="${friendly ? '#e8e3cb' : '#22362d'}"/>
       <path d="m139 177 3 73m15-73-4 73" stroke="#b5a05c" stroke-width="3"/>
       <path d="M106 94h79l-7 47-30 24-31-22Z" fill="#dcc7a0"/>
       <path d="m105 109 79-8-7 26-24-1-19 15-23-14Z" fill="#192821"/>

@@ -54,6 +54,13 @@ export function moveSquares(move: Move | undefined): Square[] {
   return squares;
 }
 
+/** When an objective survives a reply, keep the player's achievement highlighted too. */
+export function victorySquares(history: readonly Move[]): Square[] {
+  const last = history.at(-1);
+  const playerMove = last?.color === 'b' && history.at(-2)?.color === 'w' ? history.at(-2) : undefined;
+  return [...new Set([...moveSquares(last), ...moveSquares(playerMove)])];
+}
+
 export function victoryMoment(move: Move | undefined, checkmate: boolean): string {
   if (checkmate) return 'Checkmate! Holy hell!';
   if (move?.isKingsideCastle() || move?.isQueensideCastle()) {

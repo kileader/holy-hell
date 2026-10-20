@@ -1,7 +1,7 @@
 import type { Square } from 'chess.js';
 
-export type EncounterId = 'horsie' | 'escort' | 'bishop' | 'check' | 'castle' | 'pin' | 'discovery' | 'en-passant' | 'back-rank';
-export type Portrait = 'horsie' | 'escort' | 'bishop' | 'king' | 'rook' | 'baron';
+export type EncounterId = 'horsie' | 'escort' | 'bishop' | 'check' | 'castle' | 'pin' | 'discovery' | 'en-passant' | 'back-rank' | 'material' | 'activity' | 'pawn-chain' | 'space';
+export type Portrait = 'horsie' | 'escort' | 'bishop' | 'white-bishop' | 'king' | 'rook' | 'baron';
 
 export interface Encounter {
   id: EncounterId;
@@ -123,6 +123,50 @@ export const encounters: readonly Encounter[] = [
     hintIntro: 'Your queen can take the e8 rook with check. After the other rook takes your queen, your rook can finish the job.',
     lesson: 'Their pawns block the king’s escape squares. Use a forcing check to lure a defender onto the back rank, then bring in your rook. Checkmate ends the game.',
     victory: 'FORTRESS: FORECLOSED.', victoryLine: 'Checkmate or riot? Checkmate. The queen knew what she was doing.', par: 2,
+  },
+  {
+    id: 'material', name: 'Bishop Stonks', subtitle: 'Three points enter. Five points leave.',
+    concept: 'Material & exchanges', objective: 'Trade your bishop for the rook on f7. After Black replies, come out at least two points better.',
+    fen: '6k1/p4r1p/8/8/2B5/8/5PPP/6K1 w - - 0 1',
+    character: 'Bishop Crossfire', characterRole: 'YOUR WHITE BISHOP', portrait: 'white-bishop',
+    dialogue: 'Bishop goes on vacation. Returns with a hostile acquisition.',
+    missionTitle: 'Profit, allegedly.', goalLabel: 'Win at least two points in the exchange',
+    hintIntro: 'A bishop is about 3 points; a rook is 5. Look for the bishop capture, counting the king’s possible recapture too.',
+    lesson: 'Typical values: pawn 1, knight or bishop 3, rook 5, queen 9. Trading a bishop for a rook gains about 2 points. Count the recapture too; king safety can matter more than points.',
+    victory: 'STONKS. ACTUAL STONKS.', victoryLine: 'A rook for a bishop: about two points gained, even after the recapture.', par: 1,
+  },
+  {
+    id: 'activity', name: 'Bishop Unboxed', subtitle: 'The hat would like to participate.',
+    concept: 'Activity & development', objective: 'Open your bishop’s diagonal, develop it from c1 to f4, and keep it safe through Black’s reply.',
+    fen: 'k7/pp6/8/8/8/6P1/1P1P1P1P/2B3K1 w - - 0 1',
+    character: 'Bishop Crossfire', characterRole: 'YOUR WHITE BISHOP', portrait: 'white-bishop',
+    dialogue: 'I have been behind this pawn since the invention of chess.',
+    missionTitle: 'Let the hat cook.', goalLabel: 'Develop a safe, pawn-supported bishop to f4',
+    hintIntro: 'Move the d2 pawn to open the diagonal. On f4 your bishop reaches into the center, protected by the g3 pawn.',
+    lesson: 'An active piece reaches useful squares. Your bishop starts boxed in by pawns. Open its diagonal, then develop to f4: the g3 pawn protects it while it watches the center.',
+    victory: 'VACATION IS OVER.', victoryLine: 'The bishop has a diagonal, pawn support, and absolutely no interest in desk work.', par: 2,
+  },
+  {
+    id: 'pawn-chain', name: 'Chain Reaction', subtitle: 'Pip brought a union.',
+    concept: 'Pawn structure & passed pawns', objective: 'Capture on d5 to create a passed pawn protected by another pawn. Keep the chain through Black’s reply.',
+    fen: '6k1/p6p/8/3p4/2P1P3/8/5PPP/6K1 w - - 0 1',
+    character: 'Pip, Future Overlord', characterRole: 'YOUR WHITE PAWNS', portrait: 'escort',
+    dialogue: 'Pawn storm incoming. This time I actually brought coworkers.',
+    missionTitle: 'No pawn left lonely.', goalLabel: 'Build a protected passed pawn on d5',
+    hintIntro: 'Either c4 or e4 can capture d5. The other pawn will protect the pawn that lands there.',
+    lesson: 'A passed pawn has no enemy pawn ahead on its file or either neighboring file. A pawn chain adds protection: after cxd5 or exd5, the remaining pawn supports d5 from behind.',
+    victory: 'CONNECTED. PROTECTED.', victoryLine: 'Pip has backup and a clear pawn route. Still check for enemy pieces before advancing.', par: 1,
+  },
+  {
+    id: 'space', name: 'Room Service', subtitle: 'The horsie’s rent just doubled.',
+    concept: 'Space & pawn advances', objective: 'Advance e4 to e5, supported by d4. Claim new squares and keep both central pawns through Black’s reply.',
+    fen: '6k1/p6p/5n2/3p4/3PP3/8/2B2PPP/6K1 w - - 0 1',
+    character: 'Pip, Future Overlord', characterRole: 'YOUR WHITE PAWNS', portrait: 'escort',
+    dialogue: 'Actual zoning dispute. The horsie can file an appeal.',
+    missionTitle: 'Make some room.', goalLabel: 'Hold the supported d4–e5 pawn chain',
+    hintIntro: 'e5 attacks the knight on f6 and controls d6 and f6. Your d4 pawn protects the advance.',
+    lesson: 'Advanced pawns can control more territory and restrict enemy pieces. Here e5 gains d6 and f6, attacks the knight, and opens your bishop’s diagonal. Keep pawn support; pushing blindly can lose pawns.',
+    victory: 'NEW LEASE JUST DROPPED.', victoryLine: 'More room for your pieces. Less room for theirs. Keep checking what your pawn moves leave behind.', par: 1,
   },
 ];
 

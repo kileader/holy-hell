@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Chess } from 'chess.js';
-import { moveSquares, victoryMoment, VictoryReveal, VICTORY_BOARD_MS } from '../src/celebration';
+import { moveSquares, victoryMoment, victorySquares, VictoryReveal, VICTORY_BOARD_MS } from '../src/celebration';
 
 describe('board-first victory', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -40,6 +40,16 @@ describe('board-first victory', () => {
 });
 
 describe('compound move feedback', () => {
+  it('keeps the developed bishop highlighted alongside the opponent reply', () => {
+    const chess = new Chess('k7/pp6/8/8/8/6P1/1P1P1P1P/2B3K1 w - - 0 1');
+    for (const move of ['d3', 'a5', 'Bf4', 'a4']) chess.move(move);
+    expect(victorySquares(chess.history({ verbose: true }))).toEqual(['a5', 'a4', 'c1', 'f4']);
+  });
+  it('shows the exchange origin even after the bishop is recaptured', () => {
+    const chess = new Chess('6k1/p4r1p/8/8/2B5/8/5PPP/6K1 w - - 0 1');
+    chess.move('Bxf7+'); chess.move('Kxf7');
+    expect(victorySquares(chess.history({ verbose: true }))).toEqual(['g8', 'f7', 'c4']);
+  });
   it('shows both pieces and all four squares after kingside castling', () => {
     const chess = new Chess('r5k1/5ppp/8/8/8/8/5PPP/4K2R w K - 0 1');
     const move = chess.move('O-O');

@@ -6,6 +6,52 @@ export const pieceNames: Record<PieceSymbol, string> = {
   p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king',
 };
 const value: Record<PieceSymbol, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+const teachingValue: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+const strategyIds: EncounterId[] = ['material', 'activity', 'pawn-chain', 'space'];
+
+export function materialBalance(chess: Chess): number {
+  return chess.board().flat().reduce((total, piece) => total + (piece ? teachingValue[piece.type] * (piece.color === 'w' ? 1 : -1) : 0), 0);
+}
+
+export function isPassedPawn(chess: Chess, square: Square): boolean {
+  const pawn = chess.get(square);
+  if (pawn?.type !== 'p') return false;
+  return !chess.board().flat().some(piece => piece?.type === 'p' && piece.color !== pawn.color
+    && Math.abs(piece.square.charCodeAt(0) - square.charCodeAt(0)) <= 1
+    && (Number(piece.square[1]) - Number(square[1])) * (pawn.color === 'w' ? 1 : -1) > 0);
+}
+
+function pawnSupported(chess: Chess, square: Square): boolean {
+  return chess.board().flat().some(piece => piece?.color === 'w' && piece.type === 'p'
+    && Math.abs(piece.square.charCodeAt(0) - square.charCodeAt(0)) === 1 && Number(piece.square[1]) + 1 === Number(square[1]));
+}
+
+function strategyGoal(chess: Chess, id: EncounterId): boolean {
+  // A positional milestone must survive the opponent's reply, including checks.
+  if (chess.turn() !== 'w' || chess.isCheck()) return false;
+  const white = (square: Square, type: PieceSymbol) => chess.get(square)?.color === 'w' && chess.get(square)?.type === type;
+  if (id === 'material') return !chess.board().flat().some(piece => piece?.color === 'b' && piece.type === 'r') && materialBalance(chess) >= 1;
+  if (id === 'activity') return white('f4', 'b') && pawnSupported(chess, 'f4') && !chess.isAttacked('f4', 'b');
+  if (id === 'pawn-chain') return white('d5', 'p') && pawnSupported(chess, 'd5') && isPassedPawn(chess, 'd5');
+  if (id === 'space') return white('d4', 'p') && white('e5', 'p');
+  return false;
+}
+
+/** Break ties among successful plans using material, support, and immediate threats. */
+function strategyScore(chess: Chess, id: EncounterId): number {
+  let score = materialBalance(chess) * 100;
+  for (const piece of chess.board().flat()) {
+    if (!piece || piece.type === 'k') continue;
+    if (chess.isAttacked(piece.square, piece.color === 'w' ? 'b' : 'w')) score += teachingValue[piece.type] * (piece.color === 'w' ? -25 : 25);
+  }
+  if (id === 'activity') {
+    score += bishopSight(chess, 'w').size * 8;
+    if (chess.get('f4')?.type === 'b' && chess.get('f4')?.color === 'w' && pawnSupported(chess, 'f4')) score += 200;
+  }
+  if (id === 'pawn-chain' && chess.get('d5')?.color === 'w' && pawnSupported(chess, 'd5')) score += 200;
+  if (id === 'space' && chess.get('e5')?.color === 'w' && pawnSupported(chess, 'e5')) score += 200;
+  return score;
+}
 
 export type Result = 'playing' | 'won' | 'lost' | 'draw';
 export type Promotion = 'q' | 'r' | 'b' | 'n';
@@ -24,11 +70,11 @@ export function isRookFork(move: Move): boolean {
   );
 }
 
-/** Geometry of the boss's current sight lines, ending at the first blocker. */
-export function bishopSight(chess: Chess): Set<Square> {
+/** Bishop diagonals for either side, ending at the first blocker. */
+export function bishopSight(chess: Chess, color: 'w' | 'b' = 'b'): Set<Square> {
   const result = new Set<Square>();
   for (const piece of chess.board().flat()) {
-    if (piece?.color !== 'b' || piece.type !== 'b') continue;
+    if (piece?.color !== color || piece.type !== 'b') continue;
     for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
       let file = piece.square.charCodeAt(0) - 97 + dx;
       let rank = Number(piece.square[1]) + dy;
@@ -51,6 +97,7 @@ export function isDiscoveredCheck(move: Move): boolean {
 }
 
 function goalOnBoard(chess: Chess, id: EncounterId, lastMove?: Move, priorDiscovery = false): boolean {
+  if (strategyIds.includes(id)) return strategyGoal(chess, id);
   const pieces = chess.board().flat();
   if (id === 'bishop') return !pieces.some((piece) => piece?.color === 'b' && piece.type === 'b');
   if (id === 'escort') return pieces.some((piece) => piece?.color === 'w' && piece.type !== 'p' && piece.type !== 'k');
@@ -69,6 +116,12 @@ function goalOnBoard(chess: Chess, id: EncounterId, lastMove?: Move, priorDiscov
 
 /** Only irreversible objective failures end an attempt before normal chess does. */
 function missionFailure(chess: Chess, id: EncounterId): string | undefined {
+  if (strategyIds.includes(id)) {
+    const pieces = chess.board().flat();
+    if (['material', 'activity'].includes(id) && !pieces.some(piece => piece?.color === 'w' && piece.type === 'b')) return 'Your bishop was lost before completing its job. Undo to try the plan again.';
+    if (['pawn-chain', 'space'].includes(id) && pieces.filter(piece => piece?.color === 'w' && piece.type === 'p' && 'cde'.includes(piece.square[0])).length < 2) return 'The plan needs two central pawns supporting each other. Undo to protect the chain.';
+    return undefined;
+  }
   if (id === 'castle') return !chess.getCastlingRights('w').k ? 'Moving the king or its rook gives up kingside castling. Undo to restore that right.' : undefined;
   if (id === 'en-passant') return chess.fen().split(' ')[3] === '-' ? 'En passant must be played immediately after the two-square pawn move. Undo to reopen the opportunity.' : undefined;
   if (!['horsie', 'escort', 'pin', 'discovery'].includes(id)) return undefined;
@@ -83,10 +136,11 @@ function missionFailure(chess: Chess, id: EncounterId): string | undefined {
 
 function evaluate(chess: Chess, id: EncounterId, lastMove?: Move, priorDiscovery = false): number {
   // Encounter goals take precedence over a draw caused by the final capture/underpromotion.
-  if (goalOnBoard(chess, id, lastMove, priorDiscovery)) return 100_000;
+  if (goalOnBoard(chess, id, lastMove, priorDiscovery)) return 100_000 + (strategyIds.includes(id) ? strategyScore(chess, id) : 0);
   if (chess.isCheckmate()) return chess.turn() === 'b' ? 200_000 : -200_000;
   if (chess.isDraw()) return 0;
   if (missionFailure(chess, id)) return -100_000;
+  if (strategyIds.includes(id)) return strategyScore(chess, id);
   let score = 0;
   let pawnSquare: Square | undefined;
   let whiteKing: Square | undefined;
@@ -229,6 +283,7 @@ export class Session {
     const move = chooseMove(this.chess, this.encounter.id, 3);
     if (!move) return { text: 'This position has ended. Undo or Retry to explore another approach.' };
     let intro = this.encounter.hintIntro;
+    if (this.encounter.id === 'activity' && move.piece === 'b') intro = 'The diagonal is open. Develop your bishop to f4, where the g3 pawn protects it and it reaches into the center.';
     if (this.encounter.id === 'pin' && move.captured === 'n' && move.piece === 'p') intro = 'Your pawn can now take the knight. The pin gave you time to attack it.';
     if (this.encounter.id === 'discovery' && this.discovered) intro = 'Their response to your rook’s check left the queen within reach. Look for the knight capture.';
     if (this.encounter.id === 'castle' && !move.isKingsideCastle()) intro = 'Make the king’s route safe while keeping king and rook unmoved. You cannot castle in, through, or into check.';

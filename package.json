@@ -2,7 +2,7 @@
   "name": "holy-hell",
   "version": "0.1.0",
   "private": true,
-  "description": "A chess-learning adventure with nine lessons, real rules, and ridiculous characters",
+  "description": "A chess-learning adventure with thirteen lessons, real rules, and ridiculous characters",
   "engines": { "node": ">=22.12.0" },
   "type": "module",
   "scripts": {

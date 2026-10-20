@@ -1,6 +1,6 @@
 # Holy Hell!
 
-A small, humorous chess-learning game: real chess rules, ridiculous characters, and nine authored encounters. Short lessons teach tactics and special moves, with two boss encounters to put ideas together.
+A small, humorous chess-learning game: real chess rules, ridiculous characters, and thirteen authored encounters. Short lessons teach tactics, special moves, and positional planning, with two boss encounters to put ideas together.
 
 The humor borrows from the r/AnarchyChess comment chain: knightmare fuel, pawn storms, the bishop's permanent vacation, a corner rook plotting world domination, and the en passant → holy hell → new response sequence. Characters react to the bishop hunt's pawn advances, the discovered check, and the final queen sacrifice. Missions and hints explain normal chess; the jokes do not change the rules.
 
@@ -38,7 +38,7 @@ Original arcade sound effects cover navigation, selection, menus, moves, capture
 
 Pushes to `main` run the [Pages workflow](.github/workflows/pages.yml): install the locked dependencies with Node 24, run tests, build, and deploy only `dist/`. Pull requests run the same checks without deploying. Vite uses relative asset paths so the game works under the `/holy-hell/` project URL. No account, API keys, or paid services are required to play.
 
-## The nine encounters
+## The encounters
 
 | Encounter | Objective | Teaching focus |
 | --- | --- | --- |
@@ -51,6 +51,12 @@ Pushes to `main` run the [Pages workflow](.github/workflows/pages.yml): install 
 | Discovered Drama | Uncover a rook check, then take the queen with the knight | Discovered checks, forcing replies |
 | En Passant Incident | Capture the pawn that just advanced two squares | En passant and its one-move window |
 | The Back-Rank Baron — Boss | Sacrifice the queen and finish with rook mate | Deflection, blocked escape squares, checkmate |
+| Bishop Stonks | Trade your bishop for a rook and count the recapture | Material values, favorable exchanges |
+| Bishop Unboxed | Open a diagonal and develop your bishop safely to f4 | Piece activity, pawn support, development |
+| Chain Reaction | Capture toward the center to create a protected passed pawn | Pawn structure, connected pawns |
+| Room Service | Establish a supported d4–e5 pawn chain | Space, controlled squares, pawn advances |
+
+The added strategy topics follow [Chess.com's strategy overview](https://www.chess.com/terms/chess-strategy): material, piece activity, pawn structure, space, and king safety. Castling already introduces king safety. Positions, dialogue, and exercises are original. The new goals are small positional milestones evaluated after the opponent replies; completing them is an introduction, not a demonstration of strategic mastery.
 
 You play White. Click an ivory piece, then a highlighted destination. Dots mean legal moves; rings mean captures. The dark pieces reply automatically. The rules library handles captures, check, checkmate, draws, castling, en passant, and promotion. A checkmate against the opponent also clears an encounter.
 
@@ -58,7 +64,7 @@ Hints are optional and suggest a legal move from the current position. Tactical 
 
 Mistakes continue as real chess. A lost mission piece can make its objective impossible, and normal chess game endings stop the attempt. Moving the king/rook can forfeit castling; delaying en passant closes its immediate capture window. These failures explain what happened and offer Undo. **Undo** restores your last move and the opponent's reply, including captures, promotion, castling rights, and en passant. **Retry** restarts the current encounter. Retrying while the opponent is thinking cancels the pending reply.
 
-Clear an encounter to unlock the next one. An optional star rewards clearing within its listed move count without hints or undo. Stars and unlocks are saved in this browser; active boards are not. Startup resumes at the first uncleared encounter. Once all nine are cleared, startup returns to Horsie Havoc for a replay, keeping every star and unlock. Replaying never removes earned stars. Saves from the original three encounters retain their clears and unlock Check Yourself. Encounter selection uses pages of two cards to keep every control visible. **Menu → Encounters → Start a fresh campaign** clears the saved campaign. If browser storage is unavailable, progress still works for the current visit. Saves are local to each site origin; localhost and the published site have separate progress.
+Clear an encounter to unlock the next one. An optional star rewards clearing within its listed move count without hints or undo. Stars and unlocks are saved in this browser; active boards are not. Startup resumes at the first uncleared encounter. Once all encounters are cleared, startup returns to Horsie Havoc for a replay, keeping every star and unlock. Replaying never removes earned stars. Saves from the original three encounters retain their clears and unlock Check Yourself. Existing nine-encounter saves keep their stars and unlock Bishop Stonks, the first new lesson. Encounter selection uses pages of two cards to keep every control visible. **Menu → Encounters → Start a fresh campaign** clears the saved campaign. If browser storage is unavailable, progress still works for the current visit. Saves are local to each site origin; localhost and the published site have separate progress.
 
 ## Game view and controls
 
@@ -89,6 +95,7 @@ Native dialogs contain focus. Confetti respects reduced-motion settings. Bishop 
 - **Local opponent:** deterministic, two-ply alpha-beta search with material and encounter-specific evaluation. Hint suggestions use three plies. This is a small beginner opponent, not Stockfish or a rated competitor.
 - **Vitest:** meaningful behavior and rules-boundary tests, including solutions against the actual opponent.
 - **Original SVG artwork:** Sir Neighs-a-Lot, Pip, King Reginald, and Rook Norris represent your pieces in ivory armor and white capes. Bishop Deadeye and Baron von Backrank wear dark enemy gear. Board pieces retain simple readable silhouettes.
+- **Playable bishop lessons:** Bishop Crossfire wears ivory armor and a white cape. Use your bishop in Bishop Stonks and Bishop Unboxed; the space lesson also includes a white bishop whose diagonal opens after the pawn advance.
 - **Fonts:** Barlow Condensed and DM Sans, bundled through Fontsource under the SIL Open Font License. The production build includes [third-party license notices](public/THIRD_PARTY_NOTICES.txt).
 
 ```text
@@ -142,6 +149,10 @@ These lines are legal and complete each objective against the deterministic loca
 - **Discovered Drama:** `1. Nb7+ Kb8 2. Nxd8` (if the queen blocks on a5 instead, `2. Nxa5` wins it)
 - **En Passant Incident:** `1. exd6 e.p.` (Black's previous move was `...d5`)
 - **The Back-Rank Baron:** `1. Qxe8+ Rxe8 2. Rxe8#`
+- **Bishop Stonks:** `1. Bxf7+ Kxf7` (bishop 3 for rook 5; the material balance improves by 2)
+- **Bishop Unboxed:** `1. d3 a5 2. Bf4 a4`
+- **Chain Reaction:** `1. cxd5 a5` (or `1. exd5`; the other pawn protects d5)
+- **Room Service:** `1. e5 Ng4` (the knight moves, and the d4 pawn supports e5)
 
 The solutions demonstrate solvability against this opponent. They are not claims of optimal play against a strong chess engine.
 

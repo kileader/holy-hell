@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Chess, validateFen } from 'chess.js';
 import type { Square } from 'chess.js';
 import { encounterById, encounters } from '../src/encounters';
-import { Session, bishopSight, chooseMove } from '../src/game';
+import { Session, bishopSight, chooseMove, isPassedPawn, materialBalance } from '../src/game';
 import type { Promotion } from '../src/game';
 import { complete, emptyProgress, isUnlocked, parseProgress, startingEncounter } from '../src/progress';
 
@@ -33,6 +33,7 @@ describe('authored encounters', () => {
     [6, ['a5b7', 'b7d8'], ['Kb8']],
     [7, ['e5d6'], []],
     [8, ['e2e8', 'e1e8'], ['Rxe8']],
+    [9, ['c4f7'], ['Kxf7']],
   ];
   for (const [index, moves, replies] of solutions) {
     it(`${encounters[index].name} can be cleared against the actual opponent`, () => {
@@ -200,6 +201,93 @@ describe('authored encounters', () => {
   });
 });
 
+describe('new strategic encounters', () => {
+  it.each([
+    ['activity', ['d2d3', 'c1f4'], ['a5', 'a4']],
+    ['pawn-chain', ['c4d5'], ['a5']],
+    ['space', ['e4e5'], ['Ng4']],
+  ] as const)('%s succeeds after the actual opponent reply', (id, moves, expectedReplies) => {
+    const session = new Session(encounterById(id));
+    const replies: string[] = [];
+    for (const lan of moves) {
+      play(session, lan);
+      expect(session.result).toBe('playing');
+      const reply = session.reply(); expect(reply).toBeDefined(); replies.push(reply!.san);
+    }
+    expect(replies).toEqual(expectedReplies);
+    expect(session.result).toBe('won'); expect(session.bonus).toBe(true);
+  });
+
+  it('counts the bishop-for-rook exchange after the king recaptures, then undoes it', () => {
+    const session = new Session(encounterById('material'));
+    expect(materialBalance(session.chess)).toBe(-1);
+    play(session, 'c4f7'); expect(session.result).toBe('playing');
+    expect(materialBalance(session.chess)).toBe(4);
+    expect(session.reply()?.san).toBe('Kxf7');
+    expect(materialBalance(session.chess)).toBe(1); expect(session.result).toBe('won');
+    expect(session.chess.get('f7')?.color).toBe('b');
+    session.undo(); expect(session.result).toBe('playing');
+    expect(materialBalance(session.chess)).toBe(-1); expect(session.chess.get('c4')?.type).toBe('b');
+  });
+
+  it('allows a quiet bishop move without automatically failing the material mission', () => {
+    const session = new Session(encounterById('material'));
+    play(session, 'c4d3'); session.reply(); expect(session.result).toBe('playing');
+  });
+
+  it('the development lesson starts boxed in and requires a supported bishop', () => {
+    const session = new Session(encounterById('activity'));
+    expect(session.legalMoves('c1')).toHaveLength(0);
+    play(session, 'd2d3'); session.reply();
+    expect(session.legalMoves('c1').some(move => move.to === 'f4')).toBe(true);
+    play(session, 'c1f4'); expect(session.objectiveComplete).toBe(false);
+    session.reply(); expect(session.objectiveComplete).toBe(true);
+    session.chess.remove('g3'); expect(session.objectiveComplete).toBe(false);
+  });
+
+  it('updates the development hint after the diagonal opens', () => {
+    const session = new Session(encounterById('activity'));
+    play(session, 'd2d3'); session.reply();
+    const hint = session.hint();
+    expect(hint).toMatchObject({ square: 'c1', target: 'f4' });
+    expect(hint.text).toContain('diagonal is open');
+    expect(hint.text).not.toContain('Move the d2 pawn');
+  });
+
+  it.each(['c4d5', 'e4d5'])('accepts either pawn capture creating a supported passer: %s', lan => {
+    const session = new Session(encounterById('pawn-chain'));
+    expect(isPassedPawn(session.chess, 'c4')).toBe(false);
+    expect(isPassedPawn(session.chess, 'e4')).toBe(false);
+    play(session, lan); expect(session.objectiveComplete).toBe(false); session.reply();
+    expect(isPassedPawn(session.chess, 'd5')).toBe(true); expect(session.result).toBe('won');
+  });
+
+  it('recognizes blocking pawns on adjacent files, but ignores pawns behind the passer', () => {
+    const chess = new Chess('6k1/8/2p5/3P4/2p5/8/8/6K1 w - - 0 1');
+    expect(isPassedPawn(chess, 'd5')).toBe(false);
+    chess.remove('c6'); expect(isPassedPawn(chess, 'd5')).toBe(true);
+    expect(isPassedPawn(chess, 'g1')).toBe(false);
+  });
+
+  it('shows the consequence of grabbing a pawn instead of making the supported advance', () => {
+    const session = new Session(encounterById('space'));
+    play(session, 'e4d5'); expect(session.result).toBe('playing');
+    expect(session.reply()?.san).toBe('Nxd5'); expect(session.result).toBe('lost');
+    expect(session.failureReason).toContain('supporting');
+    session.undo(); play(session, 'e4e5'); session.reply(); expect(session.result).toBe('won');
+  });
+
+  it('preserves nine-encounter saves and unlocks the strategy lessons in order', () => {
+    let old = emptyProgress();
+    for (const encounter of encounters.slice(0, 9)) old = complete(old, encounter.id, true);
+    old = parseProgress(JSON.stringify(old));
+    expect(old.completed).toHaveLength(9); expect(old.bonuses).toHaveLength(9);
+    expect(startingEncounter(old)).toBe(9); expect(isUnlocked(old, 10)).toBe(false);
+    const next = complete(old, 'material', true);
+    expect(startingEncounter(next)).toBe(10); expect(isUnlocked(next, 10)).toBe(true);
+  });
+});
+
 describe('rules integration and state recovery', () => {
   it('rejects illegal moves, enemy moves, and extra input on the enemy turn', () => {
     const session = new Session(encounters[0]);
@@ -285,7 +373,7 @@ describe('progression and browser save validation', () => {
     const before = JSON.stringify(saved);
     expect(startingEncounter(saved)).toBe(0);
     expect(JSON.stringify(saved)).toBe(before);
-    expect(saved.bonuses).toHaveLength(9);
+    expect(saved.bonuses).toHaveLength(encounters.length);
     expect(encounters.every((_, index) => isUnlocked(saved, index))).toBe(true);
   });
 
@@ -303,7 +391,7 @@ describe('progression and browser save validation', () => {
       expect(isUnlocked(saved,index)).toBe(true);
       saved = complete(saved,e.id,true);
     }
-    expect(saved.completed).toHaveLength(9);
+    expect(saved.completed).toHaveLength(encounters.length);
     expect(parseProgress(JSON.stringify(saved))).toEqual(saved);
   });
   it('unlocks encounters in order and retains an earned bonus when replayed', () => {

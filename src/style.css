@@ -616,6 +616,14 @@ p {
   margin-top: 12px;
 }
 
+.material-count {
+  font-size: 16px;
+  line-height: 1.4;
+  margin-top: 6px;
+  color: var(--success);
+  font-variant-numeric: tabular-nums;
+}
+
 .mission-objective {
   margin-top: 14px;
   font-size: 16px;
