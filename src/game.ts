@@ -43,18 +43,50 @@ export function bishopSight(chess: Chess): Set<Square> {
   return result;
 }
 
-function goalOnBoard(chess: Chess, id: EncounterId): boolean {
+export function isDiscoveredCheck(move: Move): boolean {
+  if (move.color !== 'w' || move.piece !== 'n') return false;
+  const after = new Chess(move.after);
+  const king = after.board().flat().find((piece) => piece?.color === 'b' && piece.type === 'k');
+  return !!king && after.isCheck() && !knightAttacks(move.to, king.square);
+}
+
+function goalOnBoard(chess: Chess, id: EncounterId, lastMove?: Move, priorDiscovery = false): boolean {
   const pieces = chess.board().flat();
   if (id === 'bishop') return !pieces.some((piece) => piece?.color === 'b' && piece.type === 'b');
   if (id === 'escort') return pieces.some((piece) => piece?.color === 'w' && piece.type !== 'p' && piece.type !== 'k');
+  if (id === 'back-rank') return chess.isCheckmate() && chess.turn() === 'b';
+  if (lastMove?.color !== 'w') return false;
+  if (id === 'check') {
+    const king = pieces.find((piece) => piece?.color === 'w' && piece.type === 'k');
+    return !!king && !chess.isAttacked(king.square, 'b');
+  }
+  if (id === 'castle') return lastMove.isKingsideCastle();
+  if (id === 'pin') return lastMove.piece === 'p' && lastMove.captured === 'n';
+  if (id === 'discovery') return priorDiscovery && lastMove.piece === 'n' && lastMove.captured === 'q';
+  if (id === 'en-passant') return lastMove.isEnPassant();
   return false;
 }
 
-function evaluate(chess: Chess, id: EncounterId): number {
+/** Only irreversible objective failures end an attempt before normal chess does. */
+function missionFailure(chess: Chess, id: EncounterId): string | undefined {
+  if (id === 'castle') return !chess.getCastlingRights('w').k ? 'Moving the king or its rook gives up kingside castling. Undo to restore that right.' : undefined;
+  if (id === 'en-passant') return chess.fen().split(' ')[3] === '-' ? 'En passant must be played immediately after the two-square pawn move. Undo to reopen the opportunity.' : undefined;
+  if (!['horsie', 'escort', 'pin', 'discovery'].includes(id)) return undefined;
+  const pieces = chess.board().flat();
+  const has = (color: 'w' | 'b', type: PieceSymbol) => pieces.some((piece) => piece?.color === color && piece.type === type);
+  if ((id === 'horsie' || id === 'discovery') && !has('w', 'n')) return 'Your knight was captured. Undo to save it.';
+  if ((id === 'escort' || id === 'pin') && !has('w', 'p')) return 'Your pawn is gone. Undo to try the mission again.';
+  if (id === 'pin' && !has('b', 'n')) return 'The mission needs your pawn to take the knight. Undo to try that plan.';
+  if (id === 'discovery' && !has('b', 'q')) return 'The mission needs your knight to win the queen after a discovered check. Undo to try that plan.';
+  return undefined;
+}
+
+function evaluate(chess: Chess, id: EncounterId, lastMove?: Move, priorDiscovery = false): number {
   // Encounter goals take precedence over a draw caused by the final capture/underpromotion.
-  if (goalOnBoard(chess, id)) return 100_000;
+  if (goalOnBoard(chess, id, lastMove, priorDiscovery)) return 100_000;
   if (chess.isCheckmate()) return chess.turn() === 'b' ? 200_000 : -200_000;
   if (chess.isDraw()) return 0;
+  if (missionFailure(chess, id)) return -100_000;
   let score = 0;
   let pawnSquare: Square | undefined;
   let whiteKing: Square | undefined;
@@ -90,13 +122,14 @@ function orderedMoves(chess: Chess): Move[] {
   });
 }
 
-function search(chess: Chess, id: EncounterId, depth: number, alpha: number, beta: number): number {
-  if (depth === 0 || goalOnBoard(chess, id) || chess.isGameOver()) return evaluate(chess, id);
+function search(chess: Chess, id: EncounterId, depth: number, alpha: number, beta: number, lastMove: Move, priorDiscovery: boolean): number {
+  if (depth === 0 || goalOnBoard(chess, id, lastMove, priorDiscovery) || missionFailure(chess, id) || chess.isGameOver()) return evaluate(chess, id, lastMove, priorDiscovery);
   const maximize = chess.turn() === 'w';
+  const discovered = priorDiscovery || (id === 'discovery' && isDiscoveredCheck(lastMove));
   let best = maximize ? -Infinity : Infinity;
   for (const move of orderedMoves(chess)) {
     chess.move(move);
-    const score = search(chess, id, depth - 1, alpha, beta);
+    const score = search(chess, id, depth - 1, alpha, beta, move, discovered);
     chess.undo();
     best = maximize ? Math.max(best, score) : Math.min(best, score);
     if (maximize) alpha = Math.max(alpha, best);
@@ -110,11 +143,12 @@ function search(chess: Chess, id: EncounterId, depth: number, alpha: number, bet
 export function chooseMove(chess: Chess, id: EncounterId, depth = 2): Move | undefined {
   if (chess.isGameOver()) return undefined;
   const maximize = chess.turn() === 'w';
+  const discovered = id === 'discovery' && chess.history({ verbose: true }).some(isDiscoveredCheck);
   let bestScore = maximize ? -Infinity : Infinity;
   let bestMove: Move | undefined;
   for (const move of orderedMoves(chess)) {
     chess.move(move);
-    const score = search(chess, id, depth - 1, -Infinity, Infinity);
+    const score = search(chess, id, depth - 1, -Infinity, Infinity, move, discovered);
     chess.undo();
     if (!bestMove || (maximize ? score > bestScore : score < bestScore)) {
       bestScore = score;
@@ -138,19 +172,20 @@ export class Session {
   get history(): Move[] { return this.chess.history({ verbose: true }); }
   get whiteMoves(): number { return this.history.filter((move) => move.color === 'w').length; }
   get forked(): boolean { return this.history.some(isRookFork); }
+  get discovered(): boolean { return this.history.some(isDiscoveredCheck); }
   get objectiveComplete(): boolean {
     const history = this.history;
-    return this.encounter.id === 'horsie'
-      ? history.some((move, index) => move.color === 'w' && move.piece === 'n' && move.captured === 'r' && history.slice(0, index).some(isRookFork))
-      : goalOnBoard(this.chess, this.encounter.id);
+    if (this.encounter.id === 'horsie') return history.some((move, index) => move.color === 'w' && move.piece === 'n' && move.captured === 'r' && history.slice(0, index).some(isRookFork));
+    if (this.encounter.id === 'discovery') return history.some((move, index) => move.color === 'w' && move.piece === 'n' && move.captured === 'q' && history.slice(0, index).some(isDiscoveredCheck));
+    if (['check', 'castle', 'pin', 'en-passant'].includes(this.encounter.id)) return history.some((move) => goalOnBoard(new Chess(move.after), this.encounter.id, move));
+    return goalOnBoard(this.chess, this.encounter.id);
   }
+  get failureReason(): string | undefined { return this.objectiveComplete ? undefined : missionFailure(this.chess, this.encounter.id); }
   get result(): Result {
     if (this.objectiveComplete) return 'won';
     if (this.chess.isCheckmate()) return this.chess.turn() === 'b' ? 'won' : 'lost';
     if (this.chess.isDraw()) return 'draw';
-    const pieces = this.chess.board().flat();
-    if (this.encounter.id === 'horsie' && !pieces.some((piece) => piece?.type === 'n' && piece.color === 'w')) return 'lost';
-    if (this.encounter.id === 'escort' && !pieces.some((piece) => piece?.type === 'p' && piece.color === 'w')) return 'lost';
+    if (this.failureReason) return 'lost';
     return 'playing';
   }
 
@@ -193,11 +228,11 @@ export class Session {
     }
     const move = chooseMove(this.chess, this.encounter.id, 3);
     if (!move) return { text: 'This position has ended. Undo or Retry to explore another approach.' };
-    const intro = this.encounter.id === 'escort'
-      ? 'Keep your king close to the pawn. Don’t rush into the enemy king’s reach.'
-      : this.encounter.id === 'bishop'
-        ? 'Use the diagonal overlay to spot the sniper’s sight lines. Checks can force its king to respond.'
-        : 'The fork opportunity has changed. Look for checks and keep your knight safe; you can also undo.';
+    let intro = this.encounter.hintIntro;
+    if (this.encounter.id === 'pin' && move.captured === 'n' && move.piece === 'p') intro = 'Your pawn can now take the knight. The pin gave you time to attack it.';
+    if (this.encounter.id === 'discovery' && this.discovered) intro = 'Their response to your rook’s check left the queen within reach. Look for the knight capture.';
+    if (this.encounter.id === 'castle' && !move.isKingsideCastle()) intro = 'Make the king’s route safe while keeping king and rook unmoved. You cannot castle in, through, or into check.';
+    if (this.encounter.id === 'back-rank' && move.san.includes('#')) intro = 'The defender has been drawn away. Your rook can give check along the back rank, and the king has no escape.';
     return { text: `${intro} Try ${pieceNames[move.piece]} ${move.from} → ${move.to}${move.promotion ? ' and promote' : ''}.`, square: move.from, target: move.to };
   }
 }

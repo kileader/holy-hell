@@ -1,5 +1,5 @@
 import type { PieceSymbol } from 'chess.js';
-import type { EncounterId } from './encounters';
+import type { Portrait } from './encounters';
 
 export function icon(name: 'arrow' | 'retry' | 'undo' | 'bulb' | 'lock' | 'check' | 'target' | 'star' | 'book' | 'x' | 'eye' | 'moon' | 'expand' | 'menu'): string {
   const paths = {
@@ -34,13 +34,77 @@ export function pieceSvg(type: PieceSymbol, color: 'w' | 'b'): string {
   return `<svg class="chess-piece ${color === 'w' ? 'ivory' : 'ink'}" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${shapes[type]}<path d="M18 50h28l3 6H15Z"/></g></svg>`;
 }
 
-export function characterArt(id: EncounterId): string {
+export function characterArt(id: Portrait): string {
   if (id === 'bishop') return bishopSniperArt();
+  if (id === 'king') return kingArt();
+  if (id === 'rook' || id === 'baron') return rookArt(id === 'baron');
   return id === 'horsie' ? warhorseArt() : royalPawnArt();
 }
 
 let portraitSequence = 0;
 let sniperSequence = 0;
+
+function kingArt(): string {
+  const id = `king-${++portraitSequence}`;
+  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="King Reginald, your white king, in ivory plate armor and a white royal cloak, with a huge gold crown and a cross-topped scepter">
+    <defs><linearGradient id="${id}-armor" x2="1" y2="1"><stop stop-color="#fff7dc"/><stop offset="1" stop-color="#a7b9ac"/></linearGradient><linearGradient id="${id}-gold" x2="1" y2="1"><stop stop-color="#ffe6a0"/><stop offset="1" stop-color="#a07838"/></linearGradient></defs>
+    <rect width="300" height="300" rx="8" fill="#111d19"/>
+    <g fill="none" stroke="#8c8d58" opacity=".65"><circle cx="150" cy="148" r="106" stroke-width="1.5"/><circle cx="150" cy="148" r="86" stroke-dasharray="3 12"/></g>
+    <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <path d="m107 142-36 13-30 116 55-14 20 22 34-17 34 17 22-21 50 13-28-114-36-15Z" fill="#e5e7d7"/>
+      <path d="m75 188-18 65 35-10m131-55 19 65-35-10" fill="none" stroke="#bea86b" stroke-width="3"/>
+      <path d="m105 147-31 7-18 34 24 29 32-17 14-34m65-18 31 7 18 34-24 29-32-17-14-34" fill="url(#${id}-armor)"/>
+      <path d="m113 166-10 66 21 31h52l22-31-11-66Z" fill="url(#${id}-armor)"/>
+      <path d="m127 176 24 8 23-8-4 32-20 18-20-18Z" fill="#284536"/>
+      <path d="M150 189v22m-8-14h16" stroke="#edca74" stroke-width="4"/>
+      <path d="m111 236 39 12 39-12" fill="none" stroke="#b89b52" stroke-width="3"/>
+      <path d="m114 92 3 45 32 27 33-27 5-45Z" fill="#cda576"/>
+      <path d="m119 126 16 7 15-6 16 6 17-8-7 25-26 20-28-20Z" fill="#e9e0c0"/>
+      <path d="m124 111 16-3m21 1 13 3" stroke="#273c2c" stroke-width="4"/>
+      <path d="m148 112-4 13 10 1m-14 17 21-1" fill="none" stroke="#77563a" stroke-width="2"/>
+      <path d="m110 100-12-52 27 16 25-29 25 29 26-16-12 52-39 7Z" fill="url(#${id}-gold)"/>
+      <path d="M150 14v34m-11-23h22" stroke="#f7d88c" stroke-width="7"/>
+      <path d="m112 85 38 8 37-8" fill="none" stroke="#fff2bd" stroke-width="3"/>
+      <path d="m150 62-10 12 10 12 10-12Z" fill="#2c6e50"/>
+      <path d="M231 99v159" stroke="#d5b166" stroke-width="9"/>
+      <path d="M231 66v30m-10-21h20" stroke="#f3d68e" stroke-width="6"/>
+      <path d="m231 92-13 13 13 13 13-13Z" fill="url(#${id}-gold)"/>
+      <path d="m199 204 24 2 15 14-7 18-30-8-11-15m-97-6-19 2-14 19 10 15 25-7 8-17Z" fill="#f2ecd5"/>
+      <path d="M84 270h132l14 20H70Z" fill="#eee8d2" stroke="#9a9e78" stroke-width="2"/>
+    </g>
+  </svg>`;
+}
+
+function rookArt(enemy: boolean): string {
+  const id = `rook-${++portraitSequence}`;
+  const light = enemy ? '#64786c' : '#fff7dc';
+  const shade = enemy ? '#23372f' : '#a7b9ac';
+  const cloak = enemy ? '#522a33' : '#e5e7d7';
+  const trim = enemy ? '#ed7750' : '#c7a65d';
+  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="${enemy ? 'Baron von Backrank, an enemy rook in dark fortress armor with a red cloak and a glowing visor' : 'Rook Norris, your white rook, in massive ivory fortress armor and a white cloak'}">
+    <defs><linearGradient id="${id}-armor" x2="1" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${shade}"/></linearGradient></defs>
+    <rect width="300" height="300" rx="8" fill="#111d19"/>
+    <g fill="none" stroke="${trim}" opacity=".5"><circle cx="150" cy="148" r="107" stroke-width="1.5"/><circle cx="150" cy="148" r="87" stroke-dasharray="3 12"/></g>
+    <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <path d="m106 133-39 28-26 111 56-17 19 25 34-17 36 17 21-25 52 17-27-111-39-28Z" fill="${cloak}"/>
+      <path d="m69 193-12 58 35-11m139-47 13 58-35-11" fill="none" stroke="${trim}" stroke-width="3"/>
+      <path d="M58 146h44l20 26-14 39H67l-22-28Zm140 0h44l13 37-22 28h-41l-14-39Z" fill="url(#${id}-armor)"/>
+      <path d="m61 147-2-23 22 20m157 3 2-23-22 20" fill="${trim}"/>
+      <path d="m112 154-11 80 23 30h53l23-30-12-80Z" fill="url(#${id}-armor)"/>
+      <path d="m120 174 30 8 30-8-7 42-23 19-23-19Z" fill="#1d352a"/>
+      <path d="M137 194h7v8h12v-8h7v22h-26Z" fill="${trim}" stroke-width="2"/>
+      <path d="M109 236h81m-59 0v19m39-19v19" fill="none" stroke="${trim}" stroke-width="2"/>
+      <path d="M107 79h86l-6 59-37 27-37-27Z" fill="url(#${id}-armor)"/>
+      <path d="m114 103 36 9 35-9-5 25-30 15-31-15Z" fill="#14271e"/>
+      <path d="m124 117 17 4m19 0 17-4" stroke="${enemy ? '#ff9c62' : '#ffe6a0'}" stroke-width="4"/>
+      <path d="M99 42h24v19h15V36h24v25h15V42h24v44l-18 10h-66L99 86Z" fill="url(#${id}-armor)"/>
+      <path d="M112 79h77m-49-17v17m27-17v17m-35 60 18 10 18-10" fill="none" stroke="${trim}" stroke-width="3"/>
+      <path d="m65 205-15 25 14 24 35-9 10-23-18-16Zm170 0 15 25-14 24-35-9-10-23 18-16Z" fill="url(#${id}-armor)"/>
+      <path d="m61 225 29 9m-29 1 25 8m154-18-29 9m29 1-25 8" stroke="${trim}" stroke-width="2"/>
+      <path d="M82 271h136l14 20H68Z" fill="${enemy ? '#1b3026' : '#eee8d2'}" stroke="${trim}" stroke-width="2"/>
+    </g>
+  </svg>`;
+}
 
 function warhorseArt(): string {
   const id = `warhorse-${++portraitSequence}`;

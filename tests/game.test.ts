@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Chess, validateFen } from 'chess.js';
 import type { Square } from 'chess.js';
-import { encounters } from '../src/encounters';
+import { encounterById, encounters } from '../src/encounters';
 import { Session, bishopSight, chooseMove } from '../src/game';
 import type { Promotion } from '../src/game';
 import { complete, emptyProgress, isUnlocked, parseProgress } from '../src/progress';
@@ -27,6 +27,12 @@ describe('authored encounters', () => {
     [0, ['b5c7', 'c7a8'], ['Kd7']],
     [1, ['d5d6', 'd6e7', 'e5e6', 'e7d7', 'e6e7', 'e7e8q'], ['Kg6', 'Kf5', 'Ke5', 'Kf6', 'Ke5']],
     [2, ['a2a4', 'b2b4', 'c2c4', 'd2d4', 'e2e4', 'd1g4', 'g4c8', 'c8d8'], ['Ba7', 'Bb6', 'Ba7', 'Bb6', 'Ba7', 'Bb6', 'Bd8']],
+    [3, ['g1h1'], []],
+    [4, ['e1g1'], []],
+    [5, ['d5d6', 'd6e7'], ['a5']],
+    [6, ['a5b7', 'b7d8'], ['Kb8']],
+    [7, ['e5d6'], []],
+    [8, ['e2e8', 'e1e8'], ['Rxe8']],
   ];
   for (const [index, moves, replies] of solutions) {
     it(`${encounters[index].name} can be cleared against the actual opponent`, () => {
@@ -103,8 +109,7 @@ describe('authored encounters', () => {
     expect(session.bonus).toBe(false);
   });
 
-  it('following live hints clears promotion and the boss', () => {
-    for (const encounter of encounters.slice(1)) {
+  it.each(encounters)('following live hints clears $name', (encounter) => {
       const session = new Session(encounter);
       for (let i = 0; i < 10 && session.result === 'playing'; i++) {
         const hint = session.hint();
@@ -113,8 +118,86 @@ describe('authored encounters', () => {
         session.reply();
       }
       expect(session.result).toBe('won');
-    }
   }, 20_000);
+
+  it('the pinned knight cannot capture the pawn or dodge its advance', () => {
+    const session = new Session(encounterById('pin'));
+    const black = new Chess(session.encounter.fen.replace(' w ', ' b '));
+    expect(black.moves({ square: 'e7' })).toEqual([]);
+    play(session, 'd5d6');
+    expect(session.chess.moves({ square: 'e7' })).toEqual([]);
+  });
+
+  it('wins the queen after every legal response to the discovered check', () => {
+    const start = new Chess(encounterById('discovery').fen);
+    start.move('Nb7+');
+    for (const reply of start.moves({ verbose: true })) {
+      const session = new Session(encounterById('discovery'));
+      play(session, 'a5b7'); session.chess.move(reply);
+      const capture = session.legalMoves('b7').find((move) => move.captured === 'q');
+      expect(capture, `Queen must be capturable after ${reply.san}`).toBeDefined();
+      play(session, capture!.lan);
+      expect(session.discovered).toBe(true);
+      expect(session.result).toBe('won');
+    }
+  });
+
+  it('requires a prior discovered check, not an unrelated knight capture', () => {
+    const capture = new Session({ ...encounterById('discovery'), fen: 'k2q4/1N6/2K5/8/8/8/8/7R w - - 0 1' });
+    play(capture, 'b7d8');
+    expect(capture.discovered).toBe(false);
+    expect(capture.objectiveComplete).toBe(false);
+  });
+
+  it('castling rights are retained after a pawn move and restored by undo after a king move', () => {
+    const session = new Session(encounterById('castle'));
+    play(session, 'g2g3'); expect(session.result).toBe('playing'); session.undo();
+    play(session, 'e1f1'); expect(session.result).toBe('lost');
+    expect(session.failureReason).toContain('castling');
+    session.undo(); expect(session.chess.getCastlingRights('w').k).toBe(true);
+    play(session, 'e1g1'); expect(session.result).toBe('won');
+    session.undo(); expect(session.chess.get('h1')?.type).toBe('r');
+  });
+
+  it('explains an expired en passant opportunity and restores it with undo', () => {
+    const session = new Session(encounterById('en-passant'));
+    play(session, 'e5e6');
+    expect(session.result).toBe('lost'); expect(session.failureReason).toContain('immediately');
+    session.undo(); play(session, 'e5d6');
+    expect(session.chess.get('d5')).toBeUndefined(); expect(session.result).toBe('won');
+  });
+
+  it('does not award the pawn-pin goal for a rook capture', () => {
+    const session = new Session(encounterById('pin'));
+    play(session, 'e1e7');
+    expect(session.objectiveComplete).toBe(false); expect(session.result).toBe('lost');
+    session.undo(); expect(session.result).toBe('playing');
+  });
+
+  it('the back-rank sacrifice forces the defending rook onto e8', () => {
+    const session = new Session(encounterById('back-rank'));
+    play(session, 'e2e8');
+    expect(session.chess.moves()).toEqual(['Rxe8']);
+    expect(session.result).toBe('playing');
+    session.reply(); play(session, 'e1e8');
+    expect(session.chess.isCheckmate()).toBe(true);
+    expect(session.result).toBe('won');
+  });
+
+  it('updates tactical explanations after a pin advance, a queen block, and the boss sacrifice', () => {
+    const pin = new Session(encounterById('pin'));
+    play(pin, 'd5d6'); pin.reply();
+    expect(pin.hint()).toMatchObject({ square: 'd6', target: 'e7' });
+    expect(pin.hint().text).not.toContain('Push d5');
+    const discovery = new Session(encounterById('discovery'));
+    play(discovery, 'a5b7'); discovery.chess.move('Qa5');
+    expect(discovery.hint()).toMatchObject({ square: 'b7', target: 'a5' });
+    expect(discovery.hint().text).not.toContain('queen on d8');
+    const boss = new Session(encounterById('back-rank'));
+    play(boss, 'e2e8'); boss.reply();
+    expect(boss.hint().text).toContain('rook');
+    expect(boss.hint().text).not.toContain('Your queen can');
+  });
 });
 
 describe('rules integration and state recovery', () => {
@@ -183,6 +266,23 @@ describe('rules integration and state recovery', () => {
 });
 
 describe('progression and browser save validation', () => {
+  it('keeps the original three clears and unlocks the first added lesson', () => {
+    const saved = parseProgress('{"version":1,"completed":["horsie","escort","bishop"],"bonuses":["horsie","bishop"]}');
+    expect(saved.completed).toEqual(['horsie','escort','bishop']);
+    expect(saved.bonuses).toEqual(['horsie','bishop']);
+    expect(isUnlocked(saved,3)).toBe(true);
+    expect(isUnlocked(saved,4)).toBe(false);
+  });
+
+  it('unlocks and round-trips the full expanded campaign without skipping lessons', () => {
+    let saved = emptyProgress();
+    for (const [index,e] of encounters.entries()) {
+      expect(isUnlocked(saved,index)).toBe(true);
+      saved = complete(saved,e.id,true);
+    }
+    expect(saved.completed).toHaveLength(9);
+    expect(parseProgress(JSON.stringify(saved))).toEqual(saved);
+  });
   it('unlocks encounters in order and retains an earned bonus when replayed', () => {
     let progress = emptyProgress();
     expect(isUnlocked(progress, 0)).toBe(true);

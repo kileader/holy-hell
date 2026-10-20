@@ -293,17 +293,17 @@ p {
   border-top: 1px solid #84734b;
 }
 
-.character-poster.bishop {
+.character-poster.bishop, .character-poster.baron {
   background: #111d19;
   border-color: #a85037;
   box-shadow: 0 0 24px #ca45231a;
 }
 
-.bishop .poster-caption {
+.bishop .poster-caption, .baron .poster-caption {
   border-color: #71432e;
 }
 
-.horsie .poster-caption, .escort .poster-caption {
+.horsie .poster-caption, .escort .poster-caption, .king .poster-caption, .rook .poster-caption {
   color: #24392f;
   background: #fff7dc;
   border-color: #bdab78;
@@ -840,6 +840,16 @@ dialog > p, .help-page p {
   margin-bottom: 10px;
 }
 
+.briefing-content .setup-copy {
+  font-size: 16px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.campaign-dialog .dialog-actions {
+  margin-top: 16px;
+}
+
 .briefing-content p {
   font-size: 18px;
 }
@@ -923,7 +933,7 @@ dialog > p, .help-page p {
   display: grid;
   grid-template-columns: 36px minmax(0,1fr);
   gap: 5px 12px;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);

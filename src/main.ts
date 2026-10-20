@@ -42,6 +42,8 @@ let feedback = 'Pick an ivory piece to see its legal moves.';
 let inputMode: 'mouse' | 'keyboard' | 'gamepad' = 'mouse';
 let controllerStatus = 'Keyboard & mouse';
 let helpPage = 0;
+let campaignPage = 0;
+const campaignPageSize = 2;
 type Overlay = 'briefing' | 'menu' | 'help' | 'campaign' | 'hint' | 'history' | 'promotion' | 'victory' | 'notice';
 let activeOverlay: Overlay | undefined;
 const movement = {
@@ -114,13 +116,13 @@ function render(): void {
   const encounter = session.encounter;
   const history = session.history;
   const legal = selected ? session.legalMoves(selected) : [];
-  const last = history.at(-1);
+  const last = history.at(-1) ?? encounter.previousMove;
   const sight = showSight && encounter.id === 'bishop' ? bishopSight(session.chess) : new Set<Square>();
   const checkedKing = session.chess.isCheck() ? session.chess.board().flat().find((piece) => piece?.type === 'k' && piece.color === session.chess.turn())?.square : undefined;
   const result = session.result;
-  document.querySelector('#encounter-title')!.innerHTML = `<span>0${currentIndex + 1} / 03</span> ${encounter.name}${encounter.id === 'bishop' ? ' <em>BOSS</em>' : ''}`;
-  document.querySelector('#game')!.innerHTML = `<div class="game-layout ${encounter.id === 'bishop' ? 'is-boss' : ''}">
-    <aside class="character-panel"><p class="encounter-label">${encounter.characterRole}</p><div class="character-poster ${encounter.id}">${characterArt(encounter.id)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${encounter.dialogue}”</p></blockquote></aside>
+  document.querySelector('#encounter-title')!.innerHTML = `<span>${String(currentIndex + 1).padStart(2,'0')} / ${String(encounters.length).padStart(2,'0')}</span> ${encounter.name}${encounter.boss ? ' <em>BOSS</em>' : ''}`;
+  document.querySelector('#game')!.innerHTML = `<div class="game-layout ${encounter.boss ? 'is-boss' : ''}">
+    <aside class="character-panel"><p class="encounter-label">${encounter.characterRole}</p><div class="character-poster ${encounter.portrait}">${characterArt(encounter.portrait)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${encounter.dialogue}”</p></blockquote></aside>
     <section class="board-panel" aria-label="Play encounter"><div class="board-topline"><span class="side-label"><span class="ivory-dot"></span> You play White</span><span class="turn-status ${pending ? 'thinking' : result !== 'playing' ? 'ended' : session.chess.isCheck() ? 'in-check' : ''}"><i></i>${statusText()}</span></div>
       <div class="board-stage"><div class="board-frame"><div class="chessboard" role="group" aria-label="Chessboard, White at the bottom. Use arrow keys to navigate.">${SQUARES.map((square, index) => {
         const piece = session.chess.get(square);
@@ -130,7 +132,7 @@ function render(): void {
       }).join('')}</div></div></div>
       <div class="board-controls"><button class="secondary-button" data-action="undo" ${history.length ? '' : 'disabled'} title="Undo (X)">${icon('undo')}<span>Undo</span></button><button class="secondary-button" data-action="retry" title="Retry encounter">${icon('retry')}<span>Retry</span></button><button class="hint-button" data-action="hint" ${pending || result !== 'playing' ? 'disabled' : ''} title="Hint (Y)">${icon('bulb')}<span>Hint</span></button><button class="secondary-button" data-action="briefing" title="Mission & tactic (L / LB)">${icon('book')}<span>Briefing</span></button></div>
     </section>
-    <aside class="mission-panel"><p class="eyebrow">YOUR MISSION</p><h2>${encounter.id === 'horsie' ? 'Make it a double.' : encounter.id === 'escort' ? 'Get Pip promoted.' : 'Take out the sniper.'}</h2><p class="mission-objective">${encounter.objective}</p><div class="objective-checks">${encounter.id === 'horsie' ? `<p class="${session.forked ? 'achieved' : ''}">${icon(session.forked ? 'check' : 'target')} Fork king + rook</p><p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} Capture the rook</p>` : `<p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} ${encounter.id === 'escort' ? 'Reach rank 8' : 'Capture the bishop'}</p>`}</div><div class="feedback ${session.chess.isCheck() || result === 'lost' ? 'warning' : ''}" role="status"><p>${feedback}</p></div>${encounter.id === 'bishop' ? `<button class="sight-button ${showSight ? 'enabled' : ''}" data-action="sight" aria-pressed="${showSight}" title="Bishop diagonals (V / RB)">${icon('eye')} ${showSight ? 'Hide' : 'Show'} diagonals</button>` : ''}<button class="text-button" data-action="briefing">${icon('book')} Mission & tactic</button><p class="bonus-line">${icon('star')} Bonus: ≤ ${encounter.par} moves.<br/>No hints or undo.</p></aside>
+    <aside class="mission-panel"><p class="eyebrow">YOUR MISSION</p><h2>${encounter.missionTitle}</h2><p class="mission-objective">${encounter.objective}</p><div class="objective-checks">${encounter.id === 'horsie' ? `<p class="${session.forked ? 'achieved' : ''}">${icon(session.forked ? 'check' : 'target')} Fork king + rook</p><p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} Capture the rook</p>` : `<p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} ${encounter.goalLabel}</p>`}</div><div class="feedback ${session.chess.isCheck() || result === 'lost' ? 'warning' : ''}" role="status"><p>${feedback}</p></div>${encounter.id === 'bishop' ? `<button class="sight-button ${showSight ? 'enabled' : ''}" data-action="sight" aria-pressed="${showSight}" title="Bishop diagonals (V / RB)">${icon('eye')} ${showSight ? 'Hide' : 'Show'} diagonals</button>` : ''}<button class="text-button" data-action="briefing">${icon('book')} Mission & tactic</button><p class="bonus-line">${icon('star')} Bonus: ≤ ${encounter.par} moves.<br/>No hints or undo.</p></aside>
   </div>`;
   requestAnimationFrame(fitBoard);
   renderPrompts();
@@ -161,11 +163,20 @@ function startEncounter(index: number): void {
 }
 function showBriefing(lesson = false): void {
   const e = session.encounter;
-  showOverlay('briefing', `<p class="eyebrow">ENCOUNTER 0${currentIndex + 1}${e.id === 'bishop' ? ' · BOSS' : ''}</p><h2 id="briefing-title">${lesson ? e.concept : e.name}</h2><div class="briefing-content"><div class="briefing-art ${e.id}">${characterArt(e.id)}</div><div>${lesson ? `<p>${e.lesson}</p><p class="bonus-copy">${icon('star')} Optional star: ${e.par} moves or fewer, without hints or undo.</p>` : `<p class="character-role">${e.characterRole}</p><p class="briefing-objective">${e.objective}</p><p class="briefing-quote">${e.character}<br/>“${e.dialogue}”</p>`}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="${lesson ? 'briefing' : 'lesson'}">${lesson ? 'Mission' : 'Learn the tactic'}</button><button class="primary-button" data-action="close-overlay" autofocus>Let’s play ${icon('arrow')}</button></div>`, lesson ? 'briefing-dialog lesson-briefing' : 'briefing-dialog');
+  showOverlay('briefing', `<p class="eyebrow">ENCOUNTER 0${currentIndex + 1}${e.boss ? ' · BOSS' : ''}</p><h2 id="briefing-title">${lesson ? e.concept : e.name}</h2><div class="briefing-content"><div class="briefing-art ${e.portrait}">${characterArt(e.portrait)}</div><div>${lesson ? `<p>${e.lesson}</p><p class="bonus-copy">${icon('star')} Optional star: ${e.par} moves or fewer, without hints or undo.</p>` : `<p class="character-role">${e.characterRole}</p>${e.setup ? `<p class="setup-copy">${e.setup}</p>` : ''}<p class="briefing-objective">${e.objective}</p><p class="briefing-quote">${e.character}<br/>“${e.dialogue}”</p>`}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="${lesson ? 'briefing' : 'lesson'}">${lesson ? 'Mission' : 'Learn the tactic'}</button><button class="primary-button" data-action="close-overlay" autofocus>Let’s play ${icon('arrow')}</button></div>`, lesson ? 'briefing-dialog lesson-briefing' : 'briefing-dialog');
 }
-function showCampaign(): void {
-  showOverlay('campaign', `<p class="eyebrow">${progress.completed.length} OF 3 CLEARED</p><h2 id="campaign-title">Choose your trouble.</h2><div class="encounter-choices">${encounters.map((e, index) => `<button data-encounter="${index}" ${isUnlocked(progress,index) ? '' : 'disabled'} class="encounter-choice ${index === currentIndex ? 'current' : ''}"><span class="choice-number">${progress.completed.includes(e.id) ? icon('check') : isUnlocked(progress,index) ? `0${index + 1}` : icon('lock')}</span><strong>${e.name}</strong><span>${progress.completed.includes(e.id) ? 'Cleared' : isUnlocked(progress,index) ? e.concept : `Clear ${encounters[index - 1].name} first`}</span></button>`).join('')}</div><button class="text-button" data-action="reset-progress">Start a fresh campaign</button>`, 'campaign-dialog');
+function showCampaign(page = Math.floor(currentIndex/campaignPageSize)): void {
+  const pages = Math.ceil(encounters.length/campaignPageSize);
+  campaignPage = Math.max(0,Math.min(page,pages-1));
+  const offset = campaignPage*campaignPageSize;
+  const choices = encounters.slice(offset,offset+campaignPageSize).map((e, localIndex) => {
+    const index = offset+localIndex;
+    const cleared = progress.completed.includes(e.id);
+    return `<button data-encounter="${index}" ${isUnlocked(progress,index) ? '' : 'disabled'} class="encounter-choice ${index === currentIndex ? 'current' : ''}"><span class="choice-number">${cleared ? icon('check') : isUnlocked(progress,index) ? String(index+1).padStart(2,'0') : icon('lock')}</span><strong>${e.name}${progress.bonuses.includes(e.id) ? ' ★' : ''}</strong><span>${cleared ? 'Cleared · '+e.concept : isUnlocked(progress,index) ? e.concept : 'Clear '+encounters[index-1].name+' first'}</span></button>`;
+  }).join('');
+  showOverlay('campaign', `<p class="eyebrow">${progress.completed.length} OF ${encounters.length} CLEARED · PAGE ${campaignPage+1}/${pages}</p><h2 id="campaign-title">Choose your trouble.</h2><div class="encounter-choices">${choices}</div><div class="dialog-actions"><button class="secondary-button" data-action="campaign-prev" ${campaignPage === 0 ? 'disabled' : ''}>Previous</button><button class="secondary-button" data-action="campaign-next" ${campaignPage === pages-1 ? 'disabled' : ''}>Next page</button></div><button class="text-button" data-action="reset-progress">Start a fresh campaign</button>`, 'campaign-dialog');
 }
+
 function showMenu(): void {
   showOverlay('menu', `<p class="eyebrow">TAKE YOUR TIME</p><h2 id="menu-title">Game menu</h2><div class="pause-options"><button data-action="close-overlay" autofocus>Resume game</button><button data-action="briefing">Mission & tactic</button><button data-action="campaign">Encounters</button><button data-action="help">Controls & rules</button><button data-action="history">Move history</button><button data-action="retry">Retry encounter</button>${session.encounter.id === 'bishop' ? `<button data-action="sight">${showSight ? 'Hide' : 'Show'} bishop diagonals</button>` : ''}</div><label class="theme-control">${icon('moon')}<span>Theme</span><select id="theme-select" aria-label="Color theme">${(['system','light','dark'] as Theme[]).map((value) => `<option value="${value}" ${theme === value ? 'selected' : ''}>${value[0].toUpperCase()+value.slice(1)}</option>`).join('')}</select></label><p class="menu-status">${controllerStatus} · ${storageAvailable ? 'Progress saved' : 'Progress saved for this visit'}</p>`, 'menu-dialog');
 }
@@ -186,7 +197,7 @@ function showHelp(page = 0): void {
 }
 function showHistory(): void {
   const history = session.history;
-  showOverlay('history', `<p class="eyebrow">${session.whiteMoves} PLAYER MOVES</p><h2 id="history-title">The last four moves.</h2><ol class="history-list">${history.length ? history.slice(-4).map((move) => `<li><strong>${move.color === 'w' ? 'You' : 'Opponent'}</strong> ${describeMove(move)}</li>`).join('') : '<li>No moves yet. A suspiciously quiet chessboard.</li>'}</ol><button class="primary-button" data-action="menu" autofocus>Back to menu</button>`, 'history-dialog');
+  showOverlay('history', `<p class="eyebrow">${session.whiteMoves} PLAYER ${session.whiteMoves === 1 ? 'MOVE' : 'MOVES'}</p><h2 id="history-title">The last four moves.</h2><ol class="history-list">${history.length ? history.slice(-4).map((move) => `<li><strong>${move.color === 'w' ? 'You' : 'Opponent'}</strong> ${describeMove(move)}</li>`).join('') : '<li>No moves yet. A suspiciously quiet chessboard.</li>'}</ol><button class="primary-button" data-action="menu" autofocus>Back to menu</button>`, 'history-dialog');
 }
 function showHint(): void {
   if (pending || session.result !== 'playing') return;
@@ -199,13 +210,13 @@ function showVictory(): void {
   const e = session.encounter;
   const alternateMate = session.chess.isCheckmate() && !session.objectiveComplete;
   progress = complete(progress,e.id,session.bonus); saveProgress(); render();
-  showOverlay('victory', `<div class="celebration" aria-hidden="true">${Array.from({length:18},(_,i) => `<i style="--x:${(i*37)%100}%;--delay:${i%5*.08}s;--color:${['#e75435','#edb845','#819a7f'][i%3]}"></i>`).join('')}</div><p class="eyebrow">ENCOUNTER CLEARED</p><div class="victory-content"><div class="victory-art">${characterArt(e.id)}</div><div><h2 id="victory-title">${alternateMate ? 'CHECKMATE. HOLY HELL!' : e.victory}</h2><p>${alternateMate ? 'A chess victory clears the encounter too. Beautifully excessive.' : e.victoryLine}</p><p class="victory-stats">${session.whiteMoves} moves · ${session.hintsUsed} hints${session.bonus ? ' · ★ Bonus star!' : ''}</p>${currentIndex === 2 ? '<p class="campaign-complete">All three encounters cleared. One new chess menace.</p>' : ''}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="close-overlay">Review board</button><button class="primary-button" data-action="next" autofocus>${currentIndex < 2 ? `Next: ${encounters[currentIndex+1].name}` : 'Victory lap'} ${icon('arrow')}</button></div>`, 'victory-dialog');
+  showOverlay('victory', `<div class="celebration" aria-hidden="true">${Array.from({length:18},(_,i) => `<i style="--x:${(i*37)%100}%;--delay:${i%5*.08}s;--color:${['#e75435','#edb845','#819a7f'][i%3]}"></i>`).join('')}</div><p class="eyebrow">ENCOUNTER CLEARED</p><div class="victory-content"><div class="victory-art">${characterArt(e.portrait)}</div><div><h2 id="victory-title">${alternateMate ? 'CHECKMATE. HOLY HELL!' : e.victory}</h2><p>${alternateMate ? 'A chess victory clears the encounter too. Beautifully excessive.' : e.victoryLine}</p><p class="victory-stats">${session.whiteMoves} ${session.whiteMoves === 1 ? 'move' : 'moves'} · ${session.hintsUsed} hints${session.bonus ? ' · ★ Bonus star!' : ''}</p>${currentIndex === encounters.length - 1 ? `<p class="campaign-complete">All ${encounters.length} encounters cleared. One new chess menace.</p>` : ''}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="close-overlay">Review board</button><button class="primary-button" data-action="next" autofocus>${currentIndex < encounters.length - 1 ? `Next: ${encounters[currentIndex+1].name}` : 'Victory lap'} ${icon('arrow')}</button></div>`, 'victory-dialog');
   announce(`Victory! ${e.victory}`);
 }
 function finishTurn(): void {
   if (session.result === 'won') { feedback = 'Mission complete. Excellent nonsense.'; showVictory(); return; }
   if (session.result !== 'playing') {
-    const text = session.result === 'draw' ? 'This position is drawn. Undo to try a different route.' : session.chess.isCheckmate() ? 'Your king has no safe escape. Undo to investigate.' : `Your ${session.encounter.id === 'horsie' ? 'knight' : 'pawn'} was captured. Undo to save it.`;
+    const text = session.result === 'draw' ? 'This position is drawn. Undo to try a different route.' : session.chess.isCheckmate() ? 'Your king has no safe escape. Undo to investigate.' : session.failureReason ?? 'The mission needs a different plan. Undo to investigate.';
     feedback = text; render();
     showOverlay('notice', `<p class="eyebrow">THE BOARD HAS A COUNTERARGUMENT</p><h2 id="notice-title">${session.result === 'draw' ? 'A draw. Another route?' : 'A lesson learned.'}</h2><p>${text}</p><div class="dialog-actions"><button class="secondary-button" data-action="retry">Retry</button><button class="primary-button" data-action="undo" autofocus>Undo turn</button></div>`);
   } else render();
@@ -266,6 +277,8 @@ function performAction(action: string): void {
     case 'briefing': showBriefing(); break;
     case 'lesson': showBriefing(true); break;
     case 'campaign': showCampaign(); break;
+    case 'campaign-prev': showCampaign(campaignPage-1); break;
+    case 'campaign-next': showCampaign(campaignPage+1); break;
     case 'help': showHelp(); break;
     case 'help-prev': showHelp(helpPage-1); break;
     case 'help-next': showHelp(helpPage+1); break;
@@ -275,7 +288,7 @@ function performAction(action: string): void {
     case 'undo': cancelReply(); closeOverlay(); if (session.undo()) { selected = undefined; hint = undefined; feedback = 'Turn rewound. Try a different idea.'; render(); focusBoard(); } break;
     case 'hint': showHint(); break;
     case 'sight': if (session.encounter.id === 'bishop') { showSight = !showSight; if (activeOverlay) closeOverlay(); render(); announce(showSight ? 'Bishop sight lines shown.' : 'Bishop sight lines hidden.'); } break;
-    case 'next': startEncounter(currentIndex < 2 ? currentIndex+1 : 0); break;
+    case 'next': startEncounter(currentIndex < encounters.length - 1 ? currentIndex+1 : 0); break;
     case 'reset-progress': progress = emptyProgress(); saveProgress(); startEncounter(0); break;
   }
 }

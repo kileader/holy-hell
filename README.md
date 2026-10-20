@@ -1,6 +1,6 @@
 # Holy Hell!
 
-A small, humorous chess-learning game: real chess rules, ridiculous characters, and three authored encounters. Built to test whether short tactical challenges and a longer boss hunt make a welcoming first chess game.
+A small, humorous chess-learning game: real chess rules, ridiculous characters, and nine authored encounters. Short lessons teach tactics and special moves, with two boss encounters to put ideas together.
 
 Holy Hell! is a standalone prototype. Chess Lab remains the personal game-analysis and study project. Positions use FEN, and moves retain standard SAN/UCI notation, so a future connection is possible without coupling the apps today.
 
@@ -22,23 +22,29 @@ npm run build    # TypeScript check and production build
 npm run preview  # Serve the production build locally
 ```
 
-Opening `index.html` directly is not supported; use the development or preview server. Deploy the generated `dist/` folder to a static web host. Hosting has not been configured in this prototype.
+Opening `index.html` directly is not supported; use the development or preview server. The generated `dist/` folder works on static web hosts.
 
-## The three encounters
+## The nine encounters
 
 | Encounter | Objective | Teaching focus |
 | --- | --- | --- |
 | Horsie Havoc | Fork the king and rook, then capture the rook with the knight | Knight movement, forcing checks, forks |
 | Royal Escort | Promote the pawn | King support, safe pawn advances, promotion choices |
 | Bishop Sniper — Boss | Capture the enemy bishop | Diagonal sight lines, opening paths, forcing moves |
+| Check Yourself | Escape the rook check without stepping into the bishop's attack | Legal king escapes, check |
+| Castle Crash Course | Castle kingside | Castling conditions, king safety |
+| Pin & Punishment | Win the pinned knight with a pawn | Absolute pins, creating an attack |
+| Discovered Drama | Uncover a rook check, then take the queen with the knight | Discovered checks, forcing replies |
+| En Passant Incident | Capture the pawn that just advanced two squares | En passant and its one-move window |
+| The Back-Rank Baron — Boss | Sacrifice the queen and finish with rook mate | Deflection, blocked escape squares, checkmate |
 
 You play White. Click an ivory piece, then a highlighted destination. Dots mean legal moves; rings mean captures. The dark pieces reply automatically. The rules library handles captures, check, checkmate, draws, castling, en passant, and promotion. A checkmate against the opponent also clears an encounter.
 
-Hints are optional and suggest a legal move from the current position. The fork hints explain the specific double attack; promotion and boss hints use a slightly deeper local search. They are teaching suggestions, not a guarantee of optimal play in every position.
+Hints are optional and suggest a legal move from the current position. Tactical explanations change after the pin advance, discovered check, and boss sacrifice. Hints use a slightly deeper local search; they are teaching suggestions, not a guarantee of optimal play in every position.
 
-Mistakes continue as real chess. A lost knight/pawn can make its objective impossible, and normal chess game endings stop the attempt. **Undo** restores your last move and the opponent's reply, including captures and promotion. **Retry** restarts the current encounter. Both remain available after a loss or draw. Retrying while the opponent is thinking cancels the pending reply.
+Mistakes continue as real chess. A lost mission piece can make its objective impossible, and normal chess game endings stop the attempt. Moving the king/rook can forfeit castling; delaying en passant closes its immediate capture window. These failures explain what happened and offer Undo. **Undo** restores your last move and the opponent's reply, including captures, promotion, castling rights, and en passant. **Retry** restarts the current encounter. Retrying while the opponent is thinking cancels the pending reply.
 
-Clear an encounter to unlock the next one. An optional star rewards clearing within its listed move count without hints or undo. Stars and unlocks are saved in this browser; active boards are not. Replaying never removes earned stars. **Menu → Encounters → Start a fresh campaign** clears the saved campaign. If browser storage is unavailable, progress still works for the current visit.
+Clear an encounter to unlock the next one. An optional star rewards clearing within its listed move count without hints or undo. Stars and unlocks are saved in this browser; active boards are not. Replaying never removes earned stars. Saves from the original three encounters retain their clears and unlock Check Yourself. Encounter selection uses pages of two cards to keep every control visible. **Menu → Encounters → Start a fresh campaign** clears the saved campaign. If browser storage is unavailable, progress still works for the current visit. Saves are local to each site origin; localhost and the published site have separate progress.
 
 ## Game view and controls
 
@@ -67,7 +73,7 @@ Native dialogs contain focus. Confetti respects reduced-motion settings. Bishop 
 - **[chess.js](https://github.com/jhlywa/chess.js):** the authority for chess legality and game state; BSD-2-Clause licensed.
 - **Local opponent:** deterministic, two-ply alpha-beta search with material and encounter-specific evaluation. Hint suggestions use three plies. This is a small beginner opponent, not Stockfish or a rated competitor.
 - **Vitest:** meaningful behavior and rules-boundary tests, including solutions against the actual opponent.
-- **Original SVG artwork:** Sir Neighs-a-Lot is your white knight, and Pip is your white pawn. Their ivory armor and white capes match the pieces you control. Bishop Deadeye is the enemy, in dark sniper gear with a crimson mitre. Board pieces retain simple readable silhouettes.
+- **Original SVG artwork:** Sir Neighs-a-Lot, Pip, King Reginald, and Rook Norris represent your pieces in ivory armor and white capes. Bishop Deadeye and Baron von Backrank wear dark enemy gear. Board pieces retain simple readable silhouettes.
 - **Fonts:** Barlow Condensed and DM Sans, bundled through Fontsource under the SIL Open Font License. The production build includes [third-party license notices](public/THIRD_PARTY_NOTICES.txt).
 
 ```text
@@ -94,6 +100,7 @@ The current runtime is sufficient for this board-based slice. Fullscreen and con
 4. Does the longer bishop hunt feel like a boss? The current opponent is deliberately simple and may repeat defensive moves.
 5. Are the hints helpful without doing all the thinking, and is the humor working?
 6. Does the controller cursor feel predictable, and do the short panels and larger text work from the couch?
+7. Can players explain why castling/en passant was legal, why the pinned knight could not move, and why the final queen sacrifice worked?
 
 The move-count stars are optional, and the boss is intentionally asymmetric in material. This first version tests the encounter loop; it does not establish learning transfer or promise rating gains. There is no procedural campaign, deckbuilding, opening trainer, account system, analytics, music, or paid AI integration.
 
@@ -105,6 +112,12 @@ These lines are legal and complete each objective against the deterministic loca
 - **Horsie Havoc:** `1. Nc7+ Kd7 2. Nxa8`
 - **Royal Escort:** `1. Kd6 Kg6 2. Ke7 Kf5 3. e6 Ke5 4. Kd7 Kf6 5. e7 Ke5 6. e8=Q+`
 - **Bishop Sniper:** `1. a4 Ba7 2. b4 Bb6 3. c4 Ba7 4. d4 Bb6 5. e4 Ba7 6. Qg4 Bb6 7. Qc8+ Bd8 8. Qxd8#`
+- **Check Yourself:** `1. Kh1`
+- **Castle Crash Course:** `1. O-O`
+- **Pin & Punishment:** `1. d6 a5 2. dxe7`
+- **Discovered Drama:** `1. Nb7+ Kb8 2. Nxd8` (if the queen blocks on a5 instead, `2. Nxa5` wins it)
+- **En Passant Incident:** `1. exd6 e.p.` (Black's previous move was `...d5`)
+- **The Back-Rank Baron:** `1. Qxe8+ Rxe8 2. Rxe8#`
 
 The solutions demonstrate solvability against this opponent. They are not claims of optimal play against a strong chess engine.
 
