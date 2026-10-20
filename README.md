@@ -1,6 +1,6 @@
 # Holy Hell!
 
-A small, humorous chess-learning game: real chess rules, ridiculous rivals, and three authored encounters. Built to test whether short tactical challenges and a longer boss hunt make a welcoming first chess game.
+A small, humorous chess-learning game: real chess rules, ridiculous characters, and three authored encounters. Built to test whether short tactical challenges and a longer boss hunt make a welcoming first chess game.
 
 Holy Hell! is a standalone prototype. Chess Lab remains the personal game-analysis and study project. Positions use FEN, and moves retain standard SAN/UCI notation, so a future connection is possible without coupling the apps today.
 
@@ -67,7 +67,7 @@ Native dialogs contain focus. Confetti respects reduced-motion settings. Bishop 
 - **[chess.js](https://github.com/jhlywa/chess.js):** the authority for chess legality and game state; BSD-2-Clause licensed.
 - **Local opponent:** deterministic, two-ply alpha-beta search with material and encounter-specific evaluation. Hint suggestions use three plies. This is a small beginner opponent, not Stockfish or a rated competitor.
 - **Vitest:** meaningful behavior and rules-boundary tests, including solutions against the actual opponent.
-- **Original SVG artwork:** an armored warhorse with a flaming mane, a pawn overlord with a royal war hammer, and a sniper with an enormous bishop's mitre. Board pieces retain simple readable silhouettes.
+- **Original SVG artwork:** Sir Neighs-a-Lot is your white knight, and Pip is your white pawn. Their ivory armor and white capes match the pieces you control. Bishop Deadeye is the enemy, in dark sniper gear with a crimson mitre. Board pieces retain simple readable silhouettes.
 - **Fonts:** Barlow Condensed and DM Sans, bundled through Fontsource under the SIL Open Font License. The production build includes [third-party license notices](public/THIRD_PARTY_NOTICES.txt).
 
 ```text

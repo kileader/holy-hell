@@ -91,7 +91,7 @@ function statusText(): string {
   if (session.result === 'won') return 'Encounter cleared';
   if (session.result === 'lost') return 'Try another approach';
   if (session.result === 'draw') return 'Draw — try another route';
-  if (pending) return 'Rival is plotting…';
+  if (pending) return 'Opponent is plotting…';
   return session.chess.isCheck() ? 'Check! Protect your king' : 'Your move';
 }
 function fitBoard(): void {
@@ -120,7 +120,7 @@ function render(): void {
   const result = session.result;
   document.querySelector('#encounter-title')!.innerHTML = `<span>0${currentIndex + 1} / 03</span> ${encounter.name}${encounter.id === 'bishop' ? ' <em>BOSS</em>' : ''}`;
   document.querySelector('#game')!.innerHTML = `<div class="game-layout ${encounter.id === 'bishop' ? 'is-boss' : ''}">
-    <aside class="character-panel"><p class="encounter-label">${encounter.id === 'bishop' ? 'BOSS ENCOUNTER' : 'YOUR RIVAL'}</p><div class="character-poster ${encounter.id}">${characterArt(encounter.id)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${encounter.dialogue}”</p></blockquote></aside>
+    <aside class="character-panel"><p class="encounter-label">${encounter.characterRole}</p><div class="character-poster ${encounter.id}">${characterArt(encounter.id)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${encounter.dialogue}”</p></blockquote></aside>
     <section class="board-panel" aria-label="Play encounter"><div class="board-topline"><span class="side-label"><span class="ivory-dot"></span> You play White</span><span class="turn-status ${pending ? 'thinking' : result !== 'playing' ? 'ended' : session.chess.isCheck() ? 'in-check' : ''}"><i></i>${statusText()}</span></div>
       <div class="board-stage"><div class="board-frame"><div class="chessboard" role="group" aria-label="Chessboard, White at the bottom. Use arrow keys to navigate.">${SQUARES.map((square, index) => {
         const piece = session.chess.get(square);
@@ -161,7 +161,7 @@ function startEncounter(index: number): void {
 }
 function showBriefing(lesson = false): void {
   const e = session.encounter;
-  showOverlay('briefing', `<p class="eyebrow">ENCOUNTER 0${currentIndex + 1}${e.id === 'bishop' ? ' · BOSS' : ''}</p><h2 id="briefing-title">${lesson ? e.concept : e.name}</h2><div class="briefing-content"><div class="briefing-art ${e.id}">${characterArt(e.id)}</div><div>${lesson ? `<p>${e.lesson}</p><p class="bonus-copy">${icon('star')} Optional star: ${e.par} moves or fewer, without hints or undo.</p>` : `<p class="briefing-objective">${e.objective}</p><p class="briefing-quote">${e.character}<br/>“${e.dialogue}”</p>`}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="${lesson ? 'briefing' : 'lesson'}">${lesson ? 'Mission' : 'Learn the tactic'}</button><button class="primary-button" data-action="close-overlay" autofocus>Let’s play ${icon('arrow')}</button></div>`, lesson ? 'briefing-dialog lesson-briefing' : 'briefing-dialog');
+  showOverlay('briefing', `<p class="eyebrow">ENCOUNTER 0${currentIndex + 1}${e.id === 'bishop' ? ' · BOSS' : ''}</p><h2 id="briefing-title">${lesson ? e.concept : e.name}</h2><div class="briefing-content"><div class="briefing-art ${e.id}">${characterArt(e.id)}</div><div>${lesson ? `<p>${e.lesson}</p><p class="bonus-copy">${icon('star')} Optional star: ${e.par} moves or fewer, without hints or undo.</p>` : `<p class="character-role">${e.characterRole}</p><p class="briefing-objective">${e.objective}</p><p class="briefing-quote">${e.character}<br/>“${e.dialogue}”</p>`}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="${lesson ? 'briefing' : 'lesson'}">${lesson ? 'Mission' : 'Learn the tactic'}</button><button class="primary-button" data-action="close-overlay" autofocus>Let’s play ${icon('arrow')}</button></div>`, lesson ? 'briefing-dialog lesson-briefing' : 'briefing-dialog');
 }
 function showCampaign(): void {
   showOverlay('campaign', `<p class="eyebrow">${progress.completed.length} OF 3 CLEARED</p><h2 id="campaign-title">Choose your trouble.</h2><div class="encounter-choices">${encounters.map((e, index) => `<button data-encounter="${index}" ${isUnlocked(progress,index) ? '' : 'disabled'} class="encounter-choice ${index === currentIndex ? 'current' : ''}"><span class="choice-number">${progress.completed.includes(e.id) ? icon('check') : isUnlocked(progress,index) ? `0${index + 1}` : icon('lock')}</span><strong>${e.name}</strong><span>${progress.completed.includes(e.id) ? 'Cleared' : isUnlocked(progress,index) ? e.concept : `Clear ${encounters[index - 1].name} first`}</span></button>`).join('')}</div><button class="text-button" data-action="reset-progress">Start a fresh campaign</button>`, 'campaign-dialog');
@@ -173,20 +173,20 @@ function showHelp(page = 0): void {
   helpPage = Math.max(0,page);
   const pieces = (types: Array<keyof typeof movement>) => `<div class="piece-guide">${types.map((type) => `<div>${pieceSvg(type,'w')}<p><strong>${pieceNames[type]}</strong><span>${movement[type]}</span></p></div>`).join('')}</div>`;
   const pages = [
-    ['Make your move', '<p>You play the ivory pieces. Select a piece, then a highlighted square. Dots are moves; rings are captures. Your rival replies automatically.</p><p>Undo rewinds your move and the reply. Hints are optional. Use Briefing for the encounter’s mission.</p>'],
+    ['Make your move', '<p>You play the ivory pieces. Select a piece, then a highlighted square. Dots are moves; rings are captures. The opponent replies automatically.</p><p>Undo rewinds your move and the reply. Hints are optional. Use Briefing for the encounter’s mission.</p>'],
     ['Controller basics', '<div class="controller-guide"><p><kbd>✚ / Stick</kbd> Move cursor</p><p><kbd>A</kbd> Select / confirm</p><p><kbd>B</kbd> Cancel / back</p><p><kbd>Start</kbd> Game menu</p></div><p class="small-note">Connect a standard controller and press a button. Keyboard: arrows to move, Enter/Space to select, Escape to go back.</p>'],
     ['A few good shortcuts', '<div class="controller-guide"><p><kbd>X</kbd> Undo turn</p><p><kbd>Y</kbd> Hint</p><p><kbd>LB</kbd> Briefing</p><p><kbd>RB</kbd> Bishop diagonals</p></div><p class="small-note">Keyboard: X undo, Y hint, L briefing, V diagonals. F toggles fullscreen. Browser fullscreen starts with a click or key press.</p>'],
     ['Small pieces. Big plans.', pieces(['p','n'])],
     ['Hold the line', pieces(['b','r'])],
     ['The royal troublemakers', pieces(['q','k'])],
-    ['Keep your king safe', '<p><strong>Check:</strong> your king is attacked. Capture the attacker, block the line, or move to safety.</p><p><strong>Checkmate:</strong> there is no legal escape. Kings are never captured. Checkmating your rival also clears an encounter.</p><p><strong>Draw:</strong> no winner. Undo or retry to find another route.</p>'],
+    ['Keep your king safe', '<p><strong>Check:</strong> your king is attacked. Capture the attacker, block the line, or move to safety.</p><p><strong>Checkmate:</strong> there is no legal escape. Kings are never captured. Checkmating the opponent clears an encounter.</p><p><strong>Draw:</strong> no winner. Undo or retry to find another route.</p>'],
   ];
   helpPage = Math.min(helpPage,pages.length-1);
   showOverlay('help', `<p class="eyebrow">CONTROLS & RULES · ${helpPage+1} / ${pages.length}</p><h2 id="help-title">${pages[helpPage][0]}</h2><div class="help-page">${pages[helpPage][1]}</div><div class="dialog-actions"><button class="secondary-button" data-action="help-prev" ${helpPage ? '' : 'disabled'}>Previous</button><button class="primary-button" data-action="${helpPage < pages.length-1 ? 'help-next' : 'menu'}" autofocus>${helpPage < pages.length-1 ? 'Next' : 'Back to menu'} ${icon('arrow')}</button></div>`, 'help-dialog');
 }
 function showHistory(): void {
   const history = session.history;
-  showOverlay('history', `<p class="eyebrow">${session.whiteMoves} PLAYER MOVES</p><h2 id="history-title">The last four moves.</h2><ol class="history-list">${history.length ? history.slice(-4).map((move) => `<li><strong>${move.color === 'w' ? 'You' : 'Rival'}</strong> ${describeMove(move)}</li>`).join('') : '<li>No moves yet. A suspiciously quiet chessboard.</li>'}</ol><button class="primary-button" data-action="menu" autofocus>Back to menu</button>`, 'history-dialog');
+  showOverlay('history', `<p class="eyebrow">${session.whiteMoves} PLAYER MOVES</p><h2 id="history-title">The last four moves.</h2><ol class="history-list">${history.length ? history.slice(-4).map((move) => `<li><strong>${move.color === 'w' ? 'You' : 'Opponent'}</strong> ${describeMove(move)}</li>`).join('') : '<li>No moves yet. A suspiciously quiet chessboard.</li>'}</ol><button class="primary-button" data-action="menu" autofocus>Back to menu</button>`, 'history-dialog');
 }
 function showHint(): void {
   if (pending || session.result !== 'playing') return;
@@ -215,7 +215,7 @@ function queueReply(): void {
   if (!pending || replyTimer || activeOverlay) return;
   replyTimer = setTimeout(() => {
     const reply = session.reply(); pending = false; replyTimer = undefined;
-    if (reply) feedback = `Rival: ${describeMove(reply)}.${session.forked && session.encounter.id === 'horsie' && session.result === 'playing' ? ' Take the rook!' : ''}`;
+    if (reply) feedback = `Opponent: ${describeMove(reply)}.${session.forked && session.encounter.id === 'horsie' && session.result === 'playing' ? ' Take the rook!' : ''}`;
     finishTurn();
   },400);
 }

@@ -33,6 +33,7 @@ Tested in the Codex in-app browser:
 - Inspected Light and Dark themes, confirmed the explicit preference survives reload, and checked readable board silhouettes in both. System theme listens for OS preference changes; changing the actual OS setting was not tested.
 - Entered fullscreen through the UI and observed the fullscreen-change label update. The game also handles denied fullscreen with instructions for opening a regular browser.
 - Inspected the armored warhorse, royal pawn overlord, and bishop sniper portraits together and in the game. All are local SVG art; each rendered instance gets unique gradient identifiers.
+- Corrected character ownership: Sir Neighs-a-Lot and Pip have ivory armor, white capes, and explicit player-piece labels in portraits and mission briefings. Bishop Deadeye is labeled as the enemy. Generic turn/history text calls the opposing side the opponent.
 - Served `dist/` using `npm run preview`, completed the fork again, and confirmed the production victory/unlock path. Browser warning/error logs were empty.
 
 ## Still needs Kevin's playtest

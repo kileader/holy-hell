@@ -44,10 +44,11 @@ let sniperSequence = 0;
 
 function warhorseArt(): string {
   const id = `warhorse-${++portraitSequence}`;
-  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="Sir Neighs-a-Lot, a furious armored warhorse with a flaming mane, a steel faceplate, and an unnecessarily enormous sword">
+  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="Sir Neighs-a-Lot, your white knight, a warhorse in ivory armor and a white cape, with a flaming mane and an enormous sword">
     <defs>
       <radialGradient id="${id}-halo"><stop stop-color="#ed6c24" stop-opacity=".5"/><stop offset="1" stop-color="#ed6c24" stop-opacity="0"/></radialGradient>
-      <linearGradient id="${id}-steel" x2="1" y2="1"><stop stop-color="#c5d5ca"/><stop offset=".4" stop-color="#718d85"/><stop offset="1" stop-color="#263b36"/></linearGradient>
+      <linearGradient id="${id}-steel" x2="1" y2="1"><stop stop-color="#fff7dc"/><stop offset=".4" stop-color="#e8e7d7"/><stop offset="1" stop-color="#a3b2a5"/></linearGradient>
+      <linearGradient id="${id}-cloth" x2="1" y2="1"><stop stop-color="#fff9e9"/><stop offset=".5" stop-color="#dfdfd0"/><stop offset="1" stop-color="#b7c4b6"/></linearGradient>
       <linearGradient id="${id}-fire" x2="0" y2="1"><stop stop-color="#f9d773"/><stop offset=".45" stop-color="#ff813e"/><stop offset="1" stop-color="#aa292c"/></linearGradient>
     </defs>
     <rect width="300" height="300" rx="8" fill="#111d19"/>
@@ -62,7 +63,8 @@ function warhorseArt(): string {
       </g>
       <path d="m148 68 16-38 15 26 12-43 18 42 26-21-6 44 31-10-18 35 31 9-28 27 19 22-31 8 9 34-34-10 3 32-33-19-14-91Z" fill="url(#${id}-fire)"/>
       <path d="m173 72 14-30 8 43 21-19-9 42 27-5-21 32 17 10-19 10" fill="none" stroke="#ffe09a" stroke-width="3"/>
-      <path d="m129 143-43 24-38 99 54-11 29 23 32-17 58 12-21-92-24-36Z" fill="#7e292b"/>
+      <path d="m129 143-43 24-38 99 54-11 29 23 32-17 58 12-21-92-24-36Z" fill="url(#${id}-cloth)"/>
+      <path d="m87 183-25 66 39-7m101-37 12 51-30-7" fill="none" stroke="#ba9b57" stroke-width="3"/>
       <path d="m118 158-27 8-12 38 30 14 17-31m49-26 33 15 14 32-32 15-24-34" fill="url(#${id}-steel)"/>
       <path d="m89 169-7-20 20 12m101 15 9-22 7 29m-8 8 24-7-12 21" fill="#cfba79"/>
       <path d="m115 178-13 57 22 29h51l21-29-16-58Z" fill="url(#${id}-steel)"/>
@@ -81,9 +83,9 @@ function warhorseArt(): string {
       <path d="m117 86 23-5-7 11-16 1Z" fill="#ffcb63" stroke="#f8df9b" stroke-width="1.5"/>
       <path d="m91 103 10 26-8 14m10-21 21-15m23 1 13-7-6 20" fill="none" stroke="#d2c390" stroke-width="3"/>
       <path d="m94 111-8 3 5 14 9-3Z" fill="#536b55" stroke-width="2"/>
-      <path d="m89 216-11 18 9 18 17-6 7-19Zm110-3 14 20-9 19-19-6-6-19Z" fill="#697f6c"/>
+      <path d="m89 216-11 18 9 18 17-6 7-19Zm110-3 14 20-9 19-19-6-6-19Z" fill="#eee8d2"/>
       <path d="m82 231 17 10m94-10 14 10" stroke="#cec49a" stroke-width="2"/>
-      <path d="M84 270h130l14 21H70Z" fill="#20332a" stroke="#8c9b7a" stroke-width="2"/>
+      <path d="M84 270h130l14 21H70Z" fill="#eee8d2" stroke="#8c9b7a" stroke-width="2"/>
       <path d="M96 278h107" stroke="#d2b46e" stroke-width="2"/>
     </g>
     <g fill="#ffc66b"><path d="m52 48 3 7-3 7-3-7Zm211 126 3 7-3 7-3-7Zm-29 70 2 5-2 5-2-5Z"/><circle cx="70" cy="143" r="2"/><circle cx="247" cy="43" r="2"/></g>
@@ -92,18 +94,19 @@ function warhorseArt(): string {
 
 function royalPawnArt(): string {
   const id = `overlord-${++portraitSequence}`;
-  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="Pip, a tiny pawn overlord in absurdly huge gold armor, wearing a towering crown and wielding a massive royal war hammer">
+  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="Pip, your white pawn, in absurdly huge ivory armor and a white cape, wearing a gold crown and wielding a massive royal war hammer">
     <defs>
       <radialGradient id="${id}-halo"><stop stop-color="#b28b2f" stop-opacity=".5"/><stop offset="1" stop-color="#b28b2f" stop-opacity="0"/></radialGradient>
       <linearGradient id="${id}-gold" x2="1" y2="1"><stop stop-color="#ffe8a0"/><stop offset=".45" stop-color="#c89b49"/><stop offset="1" stop-color="#78532d"/></linearGradient>
-      <linearGradient id="${id}-cape" x2="1" y2="1"><stop stop-color="#c5453d"/><stop offset="1" stop-color="#5d222c"/></linearGradient>
+      <linearGradient id="${id}-ivory" x2="1" y2="1"><stop stop-color="#fff7dc"/><stop offset=".45" stop-color="#e8e7d7"/><stop offset="1" stop-color="#a3b2a5"/></linearGradient>
+      <linearGradient id="${id}-cape" x2="1" y2="1"><stop stop-color="#fff9e9"/><stop offset="1" stop-color="#b7c4b6"/></linearGradient>
     </defs>
     <rect width="300" height="300" rx="8" fill="#111d19"/>
     <circle cx="148" cy="132" r="138" fill="url(#${id}-halo)"/>
     <g fill="none" stroke="#8b8149" stroke-width="1.5" opacity=".7"><circle cx="150" cy="145" r="105"/><circle cx="150" cy="145" r="86" stroke-dasharray="3 12"/><path d="M150 20v25m-125 100h25m199 0h25M44 39l24 24m167 164 24 24"/></g>
     <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
       <path d="m108 135-37 16-39 121 51-11 24 21 42-16 42 16 25-21 48 11-34-117-41-20Z" fill="url(#${id}-cape)"/>
-      <path d="m69 197-14 52 25-10m148-40 13 49-27-10m-103 6-8 24m81-25 9 25" fill="none" stroke="#e66d50" stroke-width="2"/>
+      <path d="m69 197-14 52 25-10m148-40 13 49-27-10m-103 6-8 24m81-25 9 25" fill="none" stroke="#ba9b57" stroke-width="3"/>
       <g transform="rotate(-17 65 148)">
         <path d="M59 73h13v161H59Z" fill="#6e5542"/><path d="M62 104v112" stroke="#d5b26b" stroke-width="2"/>
         <path d="M28 48h75l13 18-13 28H28L15 66Z" fill="url(#${id}-gold)"/>
@@ -111,14 +114,14 @@ function royalPawnArt(): string {
         <path d="m62 52-14 17 14 17 14-17Z" fill="#bf3d36"/>
         <path d="m62 59-7 10 7 10 7-10Z" fill="#ff9c60" stroke="none"/>
       </g>
-      <path d="m102 142-30 6-19 33 22 30 36-9 13-41m62-19 35 8 24 33-23 30-37-14-11-35" fill="url(#${id}-gold)"/>
+      <path d="m102 142-30 6-19 33 22 30 36-9 13-41m62-19 35 8 24 33-23 30-37-14-11-35" fill="url(#${id}-ivory)"/>
       <path d="m74 147-6-20 25 17m121 8 6-25 13 37m-4 7 23-9-10 23" fill="#ddd2a6"/>
       <path d="m73 171 24-11m-28 22 27-10m109-10 20 13m-22-1 24 13" stroke="#f4d58b" stroke-width="2"/>
-      <path d="m116 153-8 58-16 44 56 18 59-18-18-44-8-58Z" fill="url(#${id}-gold)"/>
+      <path d="m116 153-8 58-16 44 56 18 59-18-18-44-8-58Z" fill="url(#${id}-ivory)"/>
       <path d="m125 171 24 9 24-9-3 31-20 19-22-19Z" fill="#284536"/>
       <path d="m149 183-9 13 9 13 9-13Z" fill="#f6d378" stroke="#e2b762" stroke-width="2"/>
       <path d="m113 226 36 13 39-13m-79 16 40 13 45-13" fill="none" stroke="#efda9a" stroke-width="2"/>
-      <circle cx="149" cy="115" r="32" fill="#e4d6ad"/>
+      <circle cx="149" cy="115" r="32" fill="#fff7dc"/>
       <path d="M119 107q29 10 59 0l-5 22-24 12-26-13Z" fill="#21382d"/>
       <path d="m128 119 12 2m17 0 12-3" stroke="#ffe293" stroke-width="3"/>
       <path d="M139 147h21l9 10h-39Z" fill="#efe3b5"/>
@@ -126,9 +129,9 @@ function royalPawnArt(): string {
       <path d="m112 80 37 8 38-8m-38-53 1 47" fill="none" stroke="#fff0b5" stroke-width="3"/>
       <path d="m148 55-11 15 12 13 12-14Z" fill="#c73b36"/>
       <circle cx="98" cy="39" r="5" fill="#f8d98c"/><circle cx="148" cy="19" r="6" fill="#f8d98c"/><circle cx="200" cy="39" r="5" fill="#f8d98c"/>
-      <path d="m61 200 18-5 12 12-4 22-22 5-15-14Zm140-4 19 8 13 20-10 15-26-8-9-17Z" fill="url(#${id}-gold)"/>
+      <path d="m61 200 18-5 12 12-4 22-22 5-15-14Zm140-4 19 8 13 20-10 15-26-8-9-17Z" fill="url(#${id}-ivory)"/>
       <path d="m62 211 17 9m-15-1 12 7m125-15 15 12m-17-3 13 10" stroke="#f9e7ac" stroke-width="2"/>
-      <path d="M86 269h126l14 21H73Z" fill="#20332a" stroke="#9e9b6e" stroke-width="2"/>
+      <path d="M86 269h126l14 21H73Z" fill="#eee8d2" stroke="#9e9b6e" stroke-width="2"/>
       <path d="M96 278h107" stroke="#e6c87f" stroke-width="2"/>
     </g>
     <g fill="#ffe09a"><path d="m244 64 3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM47 247l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/><circle cx="239" cy="122" r="2"/><circle cx="80" cy="111" r="2"/></g>
