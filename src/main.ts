@@ -115,6 +115,16 @@ function render(): void {
   const oldAction = active?.dataset.action;
   const encounter = session.encounter;
   const history = session.history;
+  let dialogue = encounter.dialogue;
+  if (encounter.id === 'bishop' && history.filter((move) => move.color === 'w' && move.piece === 'p').length >= 3) {
+    dialogue = 'Pawn storm incoming. I should have stayed on vacation.';
+  }
+  if (encounter.id === 'discovery' && session.discovered) {
+    dialogue = 'New response just dropped. The rook would like a word.';
+  }
+  if (encounter.id === 'back-rank' && history.some((move) => move.color === 'b' && move.captured === 'q')) {
+    dialogue = 'Queen sacrifice, anyone? ...Wait. Why are you smiling?';
+  }
   const legal = selected ? session.legalMoves(selected) : [];
   const last = history.at(-1) ?? encounter.previousMove;
   const sight = showSight && encounter.id === 'bishop' ? bishopSight(session.chess) : new Set<Square>();
@@ -122,7 +132,7 @@ function render(): void {
   const result = session.result;
   document.querySelector('#encounter-title')!.innerHTML = `<span>${String(currentIndex + 1).padStart(2,'0')} / ${String(encounters.length).padStart(2,'0')}</span> ${encounter.name}${encounter.boss ? ' <em>BOSS</em>' : ''}`;
   document.querySelector('#game')!.innerHTML = `<div class="game-layout ${encounter.boss ? 'is-boss' : ''}">
-    <aside class="character-panel"><p class="encounter-label">${encounter.characterRole}</p><div class="character-poster ${encounter.portrait}">${characterArt(encounter.portrait)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${encounter.dialogue}”</p></blockquote></aside>
+    <aside class="character-panel"><p class="encounter-label">${encounter.characterRole}</p><div class="character-poster ${encounter.portrait}">${characterArt(encounter.portrait)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${dialogue}”</p></blockquote></aside>
     <section class="board-panel" aria-label="Play encounter"><div class="board-topline"><span class="side-label"><span class="ivory-dot"></span> You play White</span><span class="turn-status ${pending ? 'thinking' : result !== 'playing' ? 'ended' : session.chess.isCheck() ? 'in-check' : ''}"><i></i>${statusText()}</span></div>
       <div class="board-stage"><div class="board-frame"><div class="chessboard" role="group" aria-label="Chessboard, White at the bottom. Use arrow keys to navigate.">${SQUARES.map((square, index) => {
         const piece = session.chess.get(square);
@@ -210,7 +220,7 @@ function showVictory(): void {
   const e = session.encounter;
   const alternateMate = session.chess.isCheckmate() && !session.objectiveComplete;
   progress = complete(progress,e.id,session.bonus); saveProgress(); render();
-  showOverlay('victory', `<div class="celebration" aria-hidden="true">${Array.from({length:18},(_,i) => `<i style="--x:${(i*37)%100}%;--delay:${i%5*.08}s;--color:${['#e75435','#edb845','#819a7f'][i%3]}"></i>`).join('')}</div><p class="eyebrow">ENCOUNTER CLEARED</p><div class="victory-content"><div class="victory-art">${characterArt(e.portrait)}</div><div><h2 id="victory-title">${alternateMate ? 'CHECKMATE. HOLY HELL!' : e.victory}</h2><p>${alternateMate ? 'A chess victory clears the encounter too. Beautifully excessive.' : e.victoryLine}</p><p class="victory-stats">${session.whiteMoves} ${session.whiteMoves === 1 ? 'move' : 'moves'} · ${session.hintsUsed} hints${session.bonus ? ' · ★ Bonus star!' : ''}</p>${currentIndex === encounters.length - 1 ? `<p class="campaign-complete">All ${encounters.length} encounters cleared. One new chess menace.</p>` : ''}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="close-overlay">Review board</button><button class="primary-button" data-action="next" autofocus>${currentIndex < encounters.length - 1 ? `Next: ${encounters[currentIndex+1].name}` : 'Victory lap'} ${icon('arrow')}</button></div>`, 'victory-dialog');
+  showOverlay('victory', `<div class="celebration" aria-hidden="true">${Array.from({length:18},(_,i) => `<i style="--x:${(i*37)%100}%;--delay:${i%5*.08}s;--color:${['#e75435','#edb845','#819a7f'][i%3]}"></i>`).join('')}</div><p class="eyebrow">ENCOUNTER CLEARED</p><div class="victory-content"><div class="victory-art">${characterArt(e.portrait)}</div><div><h2 id="victory-title">${alternateMate ? 'CHECKMATE. HOLY HELL!' : e.victory}</h2><p>${alternateMate ? 'A chess victory clears the encounter too. Beautifully excessive.' : e.victoryLine}</p><p class="victory-stats">${session.whiteMoves} ${session.whiteMoves === 1 ? 'move' : 'moves'} · ${session.hintsUsed} hints${session.bonus ? ' · ★ Bonus star!' : ''}</p>${currentIndex === encounters.length - 1 ? `<p class="campaign-complete">All ${encounters.length} encounters cleared. Ignite the chessboard!</p>` : ''}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="close-overlay">Review board</button><button class="primary-button" data-action="next" autofocus>${currentIndex < encounters.length - 1 ? `Next: ${encounters[currentIndex+1].name}` : 'Victory lap'} ${icon('arrow')}</button></div>`, 'victory-dialog');
   announce(`Victory! ${e.victory}`);
 }
 function finishTurn(): void {

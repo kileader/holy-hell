@@ -39,6 +39,7 @@ Tested in the Codex in-app browser:
 - Corrected character ownership: Sir Neighs-a-Lot and Pip have ivory armor, white capes, and explicit player-piece labels in portraits and mission briefings. Bishop Deadeye is labeled as the enemy. Generic turn/history text calls the opposing side the opponent.
 - Played all six new lessons through the no-scroll 320×568 layout. Checked new mission, tactic, and victory panels; shortened the en passant setup to keep it fully visible. Checked all five campaign pages with nine saved clears and adjusted card padding to prevent clipping.
 - Delayed en passant, read its failure explanation, used Undo, and completed the capture. The final boss correctly reports all nine encounters cleared; the first boss advances to Check Yourself.
+- Checked the meme dialogue at its actual triggers: pawn advances in Bishop Sniper, the discovered check, and the Baron's queen capture. Undo restores the Baron's original line. The revised bishop, en passant, and campaign victory text fits at 320×568.
 - Served `dist/` using `npm run preview`, completed the fork again, and confirmed the production victory/unlock path. Browser warning/error logs were empty.
 
 ## Still needs Kevin's playtest

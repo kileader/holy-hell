@@ -2,6 +2,8 @@
 
 A small, humorous chess-learning game: real chess rules, ridiculous characters, and nine authored encounters. Short lessons teach tactics and special moves, with two boss encounters to put ideas together.
 
+The humor borrows from the r/AnarchyChess comment chain: knightmare fuel, pawn storms, the bishop's permanent vacation, a corner rook plotting world domination, and the en passant → holy hell → new response sequence. Characters react to the bishop hunt's pawn advances, the discovered check, and the final queen sacrifice. Missions and hints explain normal chess; the jokes do not change the rules.
+
 **[Play Holy Hell!](https://kileader.github.io/holy-hell/)** · [Source on GitHub](https://github.com/kileader/holy-hell)
 
 Holy Hell! is a standalone prototype. Chess Lab remains the personal game-analysis and study project. Positions use FEN, and moves retain standard SAN/UCI notation, so a future connection is possible without coupling the apps today.
