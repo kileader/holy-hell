@@ -71,3 +71,11 @@ export function adjacentIndex(index: number, action: Direction): number {
   if (action === 'up') return index >= 8 ? index - 8 : index;
   return index < 56 ? index + 8 : index;
 }
+
+/** Menus wrap through enabled controls in reading order, independent of viewport layout. */
+export function menuIndex(index: number, count: number, direction: Direction): number {
+  if (count === 0) return -1;
+  if (index < 0 || index >= count) return 0;
+  const step = direction === 'up' || direction === 'left' ? -1 : 1;
+  return (index + step + count) % count;
+}

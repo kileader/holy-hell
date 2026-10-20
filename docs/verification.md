@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-- `npm test`: 61 passing tests.
+- `npm test`: 93 passing tests.
 - `npm run build`: TypeScript check and Vite production build pass.
 - All nine starting FENs are valid, have White to move, and do not place the nonmoving black king in check. Check Yourself intentionally starts with White in check.
 - Each authored solution clears its objective against the actual deterministic opponent. The initial knight fork also wins the rook after every legal king defense.
@@ -14,6 +14,10 @@
 - New goal tests cover escaping check, kingside castling, pawn capture of a pinned knight, discovered check before a knight wins the queen, en passant, and back-rank checkmate. The discovered attack works against every legal check defense; the final boss sacrifice has a forced reply.
 - Recovery checks preserve castling rights and the en passant window through Undo. Wrong-piece captures cannot satisfy pawn/knight missions. Existing three-encounter saves retain their stars and unlock the first added lesson.
 - Live hints clear every encounter. Follow-up hints adapt after the pin advance, a queen block against the discovered check, and the final boss sacrifice.
+- Result timing checks cover the full 3.2-second board interval, pause/resume without resetting it, cancellation on recovery, and replacing stale victory callbacks. Compound-move checks include both castling sides and the captured en passant square.
+- Audio checks render all 15 cues to deterministic PCM and verify finite samples, bounded peaks, short duration, and silent edges. Playback checks cover move-specific cues, lazy device creation, immediate mute/stop, no queued autoplay burst, navigation throttling, bounded polyphony, and unavailable audio support.
+- Shared splash checks preserve the 2.4-second sine fade sequence and copied controller button states, including held and newly connected controllers.
+- Menu traversal checks visit and wrap through every enabled control in both directions across varying panel sizes, and recover from missing focus or empty control lists.
 
 ## Browser checks
 
@@ -41,6 +45,10 @@ Tested in the Codex in-app browser:
 - Delayed en passant, read its failure explanation, used Undo, and completed the capture. The final boss correctly reports all nine encounters cleared; the first boss advances to Check Yourself.
 - Checked the meme dialogue at its actual triggers: pawn advances in Bishop Sniper, the discovered check, and the Baron's queen capture. Undo restores the Baron's original line. The revised bishop, en passant, and campaign victory text fits at 320×568.
 - Served `dist/` using `npm run preview`, completed the fork again, and confirmed the production victory/unlock path. Browser warning/error logs were empty.
+- Verified the supplied studio splash on black, automatic startup, Escape/mouse skip without dismissing the mission, and Retry without replaying it. The shared studio files remain unchanged.
+- Castled through the UI: the board showed king g1 and rook f1, highlighted all four affected squares, and displayed 36 confetti particles with no dialog covering the move. The result panel opened after the board interval. Menu preserved the remaining interval; Undo and Retry canceled the pending result.
+- Checked the celebration at 1280×720 and 320×568, and sound/settings menus at 320×568 and 844×390. No page overflow; theme value and mute control remained readable. M and the menu toggle agreed, mute survived reload, and warning/error logs were empty.
+- Used the shared directional navigation through every menu option, theme, Sound, and Close, confirmed wraparound, adjusted the theme, toggled Sound with confirm, and backed out from the theme without getting trapped. Focus had a visible 4px outline after switching away from mouse input.
 
 ## Still needs Kevin's playtest
 
@@ -48,5 +56,6 @@ Tested in the Codex in-app browser:
 - The boss opponent may repeat bishop retreats. Decide whether a longer hunt is fun or needs more active threats and more purposeful defenses.
 - Responsive checks used browser viewport overrides; physical touch-device and broader cross-browser testing remain unverified.
 - Physical gamepad input and couch-distance readability remain unverified. The controller sampler has automated coverage; keyboard and mouse exercised the shared UI actions. This does not establish hardware/controller feel.
+- Audio waveforms and playback lifecycle are tested; subjective loudness, timbre, and controller-only autoplay behavior still need listening on Kevin's setup.
 - Reduced-motion behavior is implemented in CSS; operating-system preference testing and a screen-reader walkthrough have not been performed.
 - Solving these authored encounters does not establish transfer to unfamiliar positions or improvement in full games.

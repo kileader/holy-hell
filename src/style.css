@@ -137,6 +137,11 @@ button:focus-visible, a:focus-visible, select:focus-visible {
   outline-offset: 3px;
 }
 
+#app:is([data-input-mode='gamepad'], [data-input-mode='keyboard']) dialog :is(button, select):focus {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
 button svg {
   pointer-events: none;
 }
@@ -374,6 +379,7 @@ p {
 }
 
 .board-stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -903,6 +909,38 @@ dialog > p, .help-page p {
   background: var(--surface);
 }
 
+.game-settings {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.game-settings .theme-control {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.theme-control select { min-width: 0; }
+
+.sound-toggle {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-alt);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sound-toggle[aria-pressed='false'] { color: var(--muted); }
+
+@media (max-width:480px) {
+  .game-settings .theme-control { padding-left: 8px; gap: 4px; }
+  .game-settings .theme-control > span { display: none; }
+  .game-settings .theme-control select { padding-inline: 6px; }
+}
+
 .theme-control select {
   flex: 1;
   font: inherit;
@@ -1108,6 +1146,7 @@ dialog > p, .help-page p {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  z-index: 6;
 }
 
 .celebration i {
@@ -1118,7 +1157,28 @@ dialog > p, .help-page p {
   height: 14px;
   background: var(--color);
   opacity: 0;
-  animation: confetti 1.5s ease-out var(--delay) 1;
+  animation: confetti 2.3s ease-out var(--delay) 1 both;
+}
+
+.is-won .board-topline { justify-content: center; }
+.is-won .side-label { display: none; }
+.is-won .turn-status { font-size: clamp(14px, 2.2vw, 18px); }
+.is-won .turn-status i { display: none; }
+.is-celebrating .board-frame {
+  border-color: #edb845;
+  box-shadow: inset 0 0 0 2px #edb845;
+}
+.is-celebrating .square.last-move {
+  box-shadow: inset 0 0 0 3px #edb845;
+  animation: victory-square .8s ease-in-out 4;
+}
+
+#app:is(.is-paused, .is-hidden) :is(.celebration i, .is-celebrating .square.last-move) {
+  animation-play-state: paused;
+}
+
+@keyframes victory-square {
+  50% { box-shadow: inset 0 0 0 5px #fff2ae; }
 }
 
 @keyframes confetti {
@@ -1132,7 +1192,7 @@ dialog > p, .help-page p {
   }
   100% {
     opacity: 0;
-    translate: 30px 600px;
+    translate: var(--drift) 650px;
     rotate: 400deg;
   }
 }
@@ -1458,6 +1518,7 @@ dialog > p, .help-page p {
   .theme-control {
     margin-top: 12px;
   }
+  .game-settings { margin-top: 12px; }
   .menu-status {
     margin-top: 8px;
   }

@@ -11,10 +11,17 @@ import type { Promotion } from './game';
 import type { Square } from 'chess.js';
 import { complete, emptyProgress, isUnlocked, parseProgress, storageKey } from './progress';
 import { characterArt, icon, pieceSvg } from './art';
-import { adjacentIndex, ControllerInput } from './controller';
+import { adjacentIndex, ControllerInput, menuIndex } from './controller';
 import type { ControlAction, Direction } from './controller';
+import { confetti, moveSquares, victoryMoment, VictoryReveal } from './celebration';
+import { moveSound, SoundEffects } from './sound';
+import type { SoundCue } from './sound';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
+const sounds = new SoundEffects();
+try { sounds.setMuted(localStorage.getItem('holy-hell-muted') === 'true'); } catch { /* Sound works for this visit. */ }
+function sfx(cue: SoundCue): void { if (!document.hidden && document.hasFocus()) sounds.play(cue); }
+const victoryReveal = new VictoryReveal();
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 type Theme = 'system' | 'light' | 'dark';
 let theme: Theme = 'system';
@@ -72,16 +79,22 @@ function closeOverlay(): void {
   if (activeOverlay === 'promotion') promotionMove = undefined;
   if (activeOverlay) dialog(activeOverlay).close();
   activeOverlay = undefined;
+  app.classList.remove('is-paused');
+  renderPrompts();
   focusBoard();
   queueReply();
+  if (!document.hidden) victoryReveal.resume();
 }
 function showOverlay(name: Overlay, content: string, className = ''): void {
+  victoryReveal.pause();
+  app.classList.add('is-paused');
   if (pending && replyTimer) { clearTimeout(replyTimer); replyTimer = undefined; }
   if (activeOverlay) dialog(activeOverlay).close();
   const target = dialog(name);
   target.className = className;
   target.innerHTML = `<button class="close-button" data-action="close-overlay" aria-label="Close panel">${icon('x')}</button>${content}`;
   activeOverlay = name;
+  renderPrompts();
   target.showModal();
   const first = target.querySelector<HTMLButtonElement>('button[autofocus]') ?? target.querySelector<HTMLButtonElement>('button:not(.close-button):not(:disabled)');
   first?.focus({ preventScroll: true });
@@ -90,7 +103,7 @@ for (const target of document.querySelectorAll<HTMLDialogElement>('dialog')) {
   target.addEventListener('cancel', (event) => { event.preventDefault(); closeOverlay(); });
 }
 function statusText(): string {
-  if (session.result === 'won') return 'Encounter cleared';
+  if (session.result === 'won') return victoryMoment(session.history.at(-1), session.chess.isCheckmate());
   if (session.result === 'lost') return 'Try another approach';
   if (session.result === 'draw') return 'Draw — try another route';
   if (pending) return 'Opponent is plotting…';
@@ -104,7 +117,14 @@ function fitBoard(): void {
 }
 new ResizeObserver(fitBoard).observe(app);
 function renderPrompts(): void {
+  app.dataset.inputMode = inputMode;
   document.querySelector('#controller-status')!.textContent = controllerStatus;
+  if (activeOverlay) {
+    document.querySelector('#control-hints')!.innerHTML = inputMode === 'gamepad'
+      ? '<span><kbd>↑↓</kbd> Browse</span><span><kbd>A</kbd> Select</span><span><kbd>B</kbd> Back</span><span class="extra-prompt"><kbd>←→</kbd> Adjust setting</span>'
+      : '<span><kbd>↑↓</kbd> Browse</span><span><kbd>Enter</kbd> Select</span><span><kbd>Esc</kbd> Back</span><span class="extra-prompt"><kbd>←→</kbd> Adjust setting</span>';
+    return;
+  }
   document.querySelector('#control-hints')!.innerHTML = inputMode === 'gamepad'
     ? '<span><kbd>✚</kbd> Move</span><span><kbd>A</kbd> Select</span><span><kbd>B</kbd> Back</span><span class="extra-prompt"><kbd>X</kbd> Undo</span><span class="extra-prompt"><kbd>Y</kbd> Hint</span><span><kbd>Start</kbd> Menu</span>'
     : '<span><kbd>↑↓←→</kbd> Move</span><span><kbd>Enter</kbd> Select</span><span class="extra-prompt"><kbd>X</kbd> Undo</span><span class="extra-prompt"><kbd>Y</kbd> Hint</span><span><kbd>Esc</kbd> Menu</span>';
@@ -127,19 +147,20 @@ function render(): void {
   }
   const legal = selected ? session.legalMoves(selected) : [];
   const last = history.at(-1) ?? encounter.previousMove;
+  const changed = history.length ? moveSquares(history.at(-1)) : last ? [last.from, last.to] : [];
   const sight = showSight && encounter.id === 'bishop' ? bishopSight(session.chess) : new Set<Square>();
   const checkedKing = session.chess.isCheck() ? session.chess.board().flat().find((piece) => piece?.type === 'k' && piece.color === session.chess.turn())?.square : undefined;
   const result = session.result;
   document.querySelector('#encounter-title')!.innerHTML = `<span>${String(currentIndex + 1).padStart(2,'0')} / ${String(encounters.length).padStart(2,'0')}</span> ${encounter.name}${encounter.boss ? ' <em>BOSS</em>' : ''}`;
-  document.querySelector('#game')!.innerHTML = `<div class="game-layout ${encounter.boss ? 'is-boss' : ''}">
+  document.querySelector('#game')!.innerHTML = `<div class="game-layout ${encounter.boss ? 'is-boss' : ''} ${victoryReveal.active ? 'is-celebrating' : ''} ${result === 'won' ? 'is-won' : ''}">
     <aside class="character-panel"><p class="encounter-label">${encounter.characterRole}</p><div class="character-poster ${encounter.portrait}">${characterArt(encounter.portrait)}<span class="poster-caption">${encounter.character}</span></div><blockquote class="speech"><p>“${dialogue}”</p></blockquote></aside>
     <section class="board-panel" aria-label="Play encounter"><div class="board-topline"><span class="side-label"><span class="ivory-dot"></span> You play White</span><span class="turn-status ${pending ? 'thinking' : result !== 'playing' ? 'ended' : session.chess.isCheck() ? 'in-check' : ''}"><i></i>${statusText()}</span></div>
       <div class="board-stage"><div class="board-frame"><div class="chessboard" role="group" aria-label="Chessboard, White at the bottom. Use arrow keys to navigate.">${SQUARES.map((square, index) => {
         const piece = session.chess.get(square);
         const move = legal.find((candidate) => candidate.to === square);
-        const classes = ['square', (Math.floor(index / 8) + index % 8) % 2 ? 'dark-square' : 'light-square', selected === square ? 'selected' : '', last?.from === square || last?.to === square ? 'last-move' : '', sight.has(square) ? 'in-sight' : '', square === checkedKing ? 'checked' : '', hint?.target === square ? 'hint-target' : '', inputMode !== 'mouse' && focusSquare === square ? 'cursor' : ''].filter(Boolean).join(' ');
+        const classes = ['square', (Math.floor(index / 8) + index % 8) % 2 ? 'dark-square' : 'light-square', selected === square ? 'selected' : '', changed.includes(square) ? 'last-move' : '', sight.has(square) ? 'in-sight' : '', square === checkedKing ? 'checked' : '', hint?.target === square ? 'hint-target' : '', inputMode !== 'mouse' && focusSquare === square ? 'cursor' : ''].filter(Boolean).join(' ');
         return `<button class="${classes}" data-square="${square}" tabindex="${square === focusSquare ? 0 : -1}" aria-label="${square}, ${piece ? `${piece.color === 'w' ? 'white' : 'black'} ${pieceNames[piece.type]}` : 'empty'}${move ? move.captured ? ', legal capture' : ', legal move' : ''}${sight.has(square) ? ', in bishop sight line' : ''}${square === checkedKing ? ', king in check' : ''}" aria-pressed="${selected === square}">${index % 8 === 0 ? `<span class="rank-coordinate">${square[1]}</span>` : ''}${index >= 56 ? `<span class="file-coordinate">${square[0]}</span>` : ''}${piece ? pieceSvg(piece.type, piece.color) : ''}${move ? `<span class="${move.captured ? 'capture-ring' : 'move-dot'}"></span>` : ''}${hint?.target === square ? '<span class="hint-marker">!</span>' : ''}</button>`;
-      }).join('')}</div></div></div>
+      }).join('')}</div></div>${victoryReveal.active ? confetti() : ''}</div>
       <div class="board-controls"><button class="secondary-button" data-action="undo" ${history.length ? '' : 'disabled'} title="Undo (X)">${icon('undo')}<span>Undo</span></button><button class="secondary-button" data-action="retry" title="Retry encounter">${icon('retry')}<span>Retry</span></button><button class="hint-button" data-action="hint" ${pending || result !== 'playing' ? 'disabled' : ''} title="Hint (Y)">${icon('bulb')}<span>Hint</span></button><button class="secondary-button" data-action="briefing" title="Mission & tactic (L / LB)">${icon('book')}<span>Briefing</span></button></div>
     </section>
     <aside class="mission-panel"><p class="eyebrow">YOUR MISSION</p><h2>${encounter.missionTitle}</h2><p class="mission-objective">${encounter.objective}</p><div class="objective-checks">${encounter.id === 'horsie' ? `<p class="${session.forked ? 'achieved' : ''}">${icon(session.forked ? 'check' : 'target')} Fork king + rook</p><p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} Capture the rook</p>` : `<p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} ${encounter.goalLabel}</p>`}</div><div class="feedback ${session.chess.isCheck() || result === 'lost' ? 'warning' : ''}" role="status"><p>${feedback}</p></div>${encounter.id === 'bishop' ? `<button class="sight-button ${showSight ? 'enabled' : ''}" data-action="sight" aria-pressed="${showSight}" title="Bishop diagonals (V / RB)">${icon('eye')} ${showSight ? 'Hide' : 'Show'} diagonals</button>` : ''}<button class="text-button" data-action="briefing">${icon('book')} Mission & tactic</button><p class="bonus-line">${icon('star')} Bonus: ≤ ${encounter.par} moves.<br/>No hints or undo.</p></aside>
@@ -153,7 +174,9 @@ function focusBoard(): void {
   document.querySelector<HTMLButtonElement>(`[data-square="${focusSquare}"]`)?.focus({ preventScroll: true });
 }
 function moveCursor(direction: Direction): void {
+  const old = focusSquare;
   focusSquare = SQUARES[adjacentIndex(SQUARES.indexOf(focusSquare), direction)];
+  if (focusSquare !== old) sfx('navigate');
   document.querySelectorAll<HTMLButtonElement>('[data-square]').forEach((button) => {
     button.tabIndex = button.dataset.square === focusSquare ? 0 : -1;
     button.classList.toggle('cursor', button.dataset.square === focusSquare);
@@ -163,6 +186,7 @@ function moveCursor(direction: Direction): void {
 function cancelReply(): void { if (replyTimer) clearTimeout(replyTimer); replyTimer = undefined; pending = false; }
 function startEncounter(index: number): void {
   if (!isUnlocked(progress, index)) return;
+  victoryReveal.cancel(); sounds.stop();
   cancelReply(); closeOverlay();
   currentIndex = index; session = new Session(encounters[index]); selected = undefined;
   focusSquare = session.chess.board().flat().find((piece) => piece?.color === 'w')!.square;
@@ -188,14 +212,14 @@ function showCampaign(page = Math.floor(currentIndex/campaignPageSize)): void {
 }
 
 function showMenu(): void {
-  showOverlay('menu', `<p class="eyebrow">TAKE YOUR TIME</p><h2 id="menu-title">Game menu</h2><div class="pause-options"><button data-action="close-overlay" autofocus>Resume game</button><button data-action="briefing">Mission & tactic</button><button data-action="campaign">Encounters</button><button data-action="help">Controls & rules</button><button data-action="history">Move history</button><button data-action="retry">Retry encounter</button>${session.encounter.id === 'bishop' ? `<button data-action="sight">${showSight ? 'Hide' : 'Show'} bishop diagonals</button>` : ''}</div><label class="theme-control">${icon('moon')}<span>Theme</span><select id="theme-select" aria-label="Color theme">${(['system','light','dark'] as Theme[]).map((value) => `<option value="${value}" ${theme === value ? 'selected' : ''}>${value[0].toUpperCase()+value.slice(1)}</option>`).join('')}</select></label><p class="menu-status">${controllerStatus} · ${storageAvailable ? 'Progress saved' : 'Progress saved for this visit'}</p>`, 'menu-dialog');
+  showOverlay('menu', `<p class="eyebrow">TAKE YOUR TIME</p><h2 id="menu-title">Game menu</h2><div class="pause-options"><button data-action="close-overlay" autofocus>Resume game</button><button data-action="briefing">Mission & tactic</button><button data-action="campaign">Encounters</button><button data-action="help">Controls & rules</button><button data-action="history">Move history</button><button data-action="retry">Retry encounter</button>${session.encounter.id === 'bishop' ? `<button data-action="sight">${showSight ? 'Hide' : 'Show'} bishop diagonals</button>` : ''}</div><div class="game-settings"><label class="theme-control">${icon('moon')}<span>Theme</span><select id="theme-select" aria-label="Color theme">${(['system','light','dark'] as Theme[]).map((value) => `<option value="${value}" ${theme === value ? 'selected' : ''}>${value[0].toUpperCase()+value.slice(1)}</option>`).join('')}</select></label><button class="sound-toggle" data-action="toggle-sound" aria-pressed="${!sounds.muted}" title="Toggle sound effects (M)">Sound: ${sounds.muted ? 'Off' : 'On'}</button></div><p class="menu-status">${controllerStatus} · ${storageAvailable ? 'Progress saved' : 'Progress saved for this visit'}</p>`, 'menu-dialog');
 }
 function showHelp(page = 0): void {
   helpPage = Math.max(0,page);
   const pieces = (types: Array<keyof typeof movement>) => `<div class="piece-guide">${types.map((type) => `<div>${pieceSvg(type,'w')}<p><strong>${pieceNames[type]}</strong><span>${movement[type]}</span></p></div>`).join('')}</div>`;
   const pages = [
     ['Make your move', '<p>You play the ivory pieces. Select a piece, then a highlighted square. Dots are moves; rings are captures. The opponent replies automatically.</p><p>Undo rewinds your move and the reply. Hints are optional. Use Briefing for the encounter’s mission.</p>'],
-    ['Controller basics', '<div class="controller-guide"><p><kbd>✚ / Stick</kbd> Move cursor</p><p><kbd>A</kbd> Select / confirm</p><p><kbd>B</kbd> Cancel / back</p><p><kbd>Start</kbd> Game menu</p></div><p class="small-note">Connect a standard controller and press a button. Keyboard: arrows to move, Enter/Space to select, Escape to go back.</p>'],
+    ['Controller basics', '<div class="controller-guide"><p><kbd>✚ / Stick</kbd> Move cursor</p><p><kbd>A</kbd> Select / confirm</p><p><kbd>B</kbd> Cancel / back</p><p><kbd>Start</kbd> Game menu</p></div><p class="small-note">Menus: up/down cycles every option. Left/right adjusts settings. Connect a standard controller and press then release a button.</p>'],
     ['A few good shortcuts', '<div class="controller-guide"><p><kbd>X</kbd> Undo turn</p><p><kbd>Y</kbd> Hint</p><p><kbd>LB</kbd> Briefing</p><p><kbd>RB</kbd> Bishop diagonals</p></div><p class="small-note">Keyboard: X undo, Y hint, L briefing, V diagonals. F toggles fullscreen. Browser fullscreen starts with a click or key press.</p>'],
     ['Small pieces. Big plans.', pieces(['p','n'])],
     ['Hold the line', pieces(['b','r'])],
@@ -219,13 +243,20 @@ function showHint(): void {
 function showVictory(): void {
   const e = session.encounter;
   const alternateMate = session.chess.isCheckmate() && !session.objectiveComplete;
-  progress = complete(progress,e.id,session.bonus); saveProgress(); render();
-  showOverlay('victory', `<div class="celebration" aria-hidden="true">${Array.from({length:18},(_,i) => `<i style="--x:${(i*37)%100}%;--delay:${i%5*.08}s;--color:${['#e75435','#edb845','#819a7f'][i%3]}"></i>`).join('')}</div><p class="eyebrow">ENCOUNTER CLEARED</p><div class="victory-content"><div class="victory-art">${characterArt(e.portrait)}</div><div><h2 id="victory-title">${alternateMate ? 'CHECKMATE. HOLY HELL!' : e.victory}</h2><p>${alternateMate ? 'A chess victory clears the encounter too. Beautifully excessive.' : e.victoryLine}</p><p class="victory-stats">${session.whiteMoves} ${session.whiteMoves === 1 ? 'move' : 'moves'} · ${session.hintsUsed} hints${session.bonus ? ' · ★ Bonus star!' : ''}</p>${currentIndex === encounters.length - 1 ? `<p class="campaign-complete">All ${encounters.length} encounters cleared. Ignite the chessboard!</p>` : ''}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="close-overlay">Review board</button><button class="primary-button" data-action="next" autofocus>${currentIndex < encounters.length - 1 ? `Next: ${encounters[currentIndex+1].name}` : 'Victory lap'} ${icon('arrow')}</button></div>`, 'victory-dialog');
+  render();
+  showOverlay('victory', `<p class="eyebrow">ENCOUNTER CLEARED</p><div class="victory-content"><div class="victory-art">${characterArt(e.portrait)}</div><div><h2 id="victory-title">${alternateMate ? 'CHECKMATE. HOLY HELL!' : e.victory}</h2><p>${alternateMate ? 'A chess victory clears the encounter too. Beautifully excessive.' : e.victoryLine}</p><p class="victory-stats">${session.whiteMoves} ${session.whiteMoves === 1 ? 'move' : 'moves'} · ${session.hintsUsed} hints${session.bonus ? ' · ★ Bonus star!' : ''}</p>${currentIndex === encounters.length - 1 ? `<p class="campaign-complete">All ${encounters.length} encounters cleared. Ignite the chessboard!</p>` : ''}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="close-overlay">Review board</button><button class="primary-button" data-action="next" autofocus>${currentIndex < encounters.length - 1 ? `Next: ${encounters[currentIndex+1].name}` : 'Victory lap'} ${icon('arrow')}</button></div>`, 'victory-dialog');
   announce(`Victory! ${e.victory}`);
 }
 function finishTurn(): void {
-  if (session.result === 'won') { feedback = 'Mission complete. Excellent nonsense.'; showVictory(); return; }
+  if (session.result === 'won') {
+    feedback = `${statusText()} Take a moment. You earned this.`;
+    progress = complete(progress, session.encounter.id, session.bonus); saveProgress();
+    victoryReveal.start(showVictory);
+    if (activeOverlay || document.hidden) victoryReveal.pause();
+    render(); sfx('victory'); announce(feedback); return;
+  }
   if (session.result !== 'playing') {
+    sfx('loss');
     const text = session.result === 'draw' ? 'This position is drawn. Undo to try a different route.' : session.chess.isCheckmate() ? 'Your king has no safe escape. Undo to investigate.' : session.failureReason ?? 'The mission needs a different plan. Undo to investigate.';
     feedback = text; render();
     showOverlay('notice', `<p class="eyebrow">THE BOARD HAS A COUNTERARGUMENT</p><h2 id="notice-title">${session.result === 'draw' ? 'A draw. Another route?' : 'A lesson learned.'}</h2><p>${text}</p><div class="dialog-actions"><button class="secondary-button" data-action="retry">Retry</button><button class="primary-button" data-action="undo" autofocus>Undo turn</button></div>`);
@@ -236,12 +267,14 @@ function queueReply(): void {
   if (!pending || replyTimer || activeOverlay) return;
   replyTimer = setTimeout(() => {
     const reply = session.reply(); pending = false; replyTimer = undefined;
+    if (reply) { sfx(moveSound(reply)); if (session.chess.isCheck()) sfx('check'); }
     if (reply) feedback = `Opponent: ${describeMove(reply)}.${session.forked && session.encounter.id === 'horsie' && session.result === 'playing' ? ' Take the rook!' : ''}`;
     finishTurn();
   },400);
 }
 function makeMove(from: Square, to: Square, promotion?: Promotion): void {
   const move = session.play(from,to,promotion); if (!move) return;
+  sfx(moveSound(move)); if (session.chess.isCheck() && !session.chess.isCheckmate()) sfx('check');
   selected = undefined; hint = undefined; focusSquare = to;
   feedback = isRookFork(move) ? 'A fork! The king must move. The rook is also under attack.' : `You: ${describeMove(move)}.`;
   if (session.result !== 'playing') { finishTurn(); return; }
@@ -251,10 +284,11 @@ function makeMove(from: Square, to: Square, promotion?: Promotion): void {
 function clickSquare(square: Square): void {
   if (pending || session.result !== 'playing' || session.chess.turn() !== 'w') return;
   focusSquare = square;
-  if (selected === square) { selected = undefined; render(); return; }
+  if (selected === square) { selected = undefined; sfx('back'); render(); return; }
   const legal = selected ? session.legalMoves(selected).filter((move) => move.to === square) : [];
   if (selected && legal.length) {
     if (legal.some((move) => move.promotion)) {
+      sfx('menu');
       promotionMove = { from:selected,to:square };
       showOverlay('promotion', `<p class="eyebrow">CAREER DEVELOPMENT</p><h2 id="promotion-title">Pick your promotion.</h2><p>A queen is usually strongest. Any choice completes Royal Escort.</p><div class="promotion-choices">${(['q','r','b','n'] as const).map((type) => `<button data-promotion="${type}" ${type === 'q' ? 'autofocus' : ''}>${pieceSvg(type,'w')}<span>${pieceNames[type]}</span></button>`).join('')}</div>`, 'promotion-dialog');
     } else makeMove(selected,square);
@@ -262,13 +296,15 @@ function clickSquare(square: Square): void {
   }
   const piece = session.chess.get(square);
   if (piece?.color === 'w') {
+    sfx('select');
     selected = square;
     const count = new Set(session.legalMoves(square).map((move) => move.to)).size;
     feedback = `${pieceNames[piece.type][0].toUpperCase()+pieceNames[piece.type].slice(1)} on ${square}: ${count} legal ${count === 1 ? 'move' : 'moves'}.`;
-  } else feedback = session.chess.isCheck() ? 'Your king is in check. Choose a highlighted escape.' : selected ? 'Choose a highlighted square or another ivory piece.' : 'You control the ivory pieces.';
+  } else { sfx('invalid'); feedback = session.chess.isCheck() ? 'Your king is in check. Choose a highlighted escape.' : selected ? 'Choose a highlighted square or another ivory piece.' : 'You control the ivory pieces.'; }
   render(); announce(feedback);
 }
 async function toggleFullscreen(): Promise<void> {
+  sfx('select');
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else await document.documentElement.requestFullscreen();
@@ -281,6 +317,7 @@ document.addEventListener('fullscreenchange', () => {
   fitBoard();
 });
 function performAction(action: string): void {
+  if (action !== 'fullscreen' && action !== 'toggle-sound') sfx(action === 'hint' ? 'hint' : action === 'undo' ? 'undo' : action === 'close-overlay' ? 'back' : action === 'menu' || action === 'briefing' ? 'menu' : 'select');
   switch (action) {
     case 'close-overlay': closeOverlay(); break;
     case 'menu': activeOverlay === 'menu' ? closeOverlay() : showMenu(); break;
@@ -294,19 +331,28 @@ function performAction(action: string): void {
     case 'help-next': showHelp(helpPage+1); break;
     case 'history': showHistory(); break;
     case 'fullscreen': void toggleFullscreen(); break;
-    case 'retry': startEncounter(currentIndex); break;
-    case 'undo': cancelReply(); closeOverlay(); if (session.undo()) { selected = undefined; hint = undefined; feedback = 'Turn rewound. Try a different idea.'; render(); focusBoard(); } break;
+    case 'retry': startEncounter(currentIndex); sfx('start'); break;
+    case 'undo': victoryReveal.cancel(); cancelReply(); closeOverlay(); if (session.undo()) { selected = undefined; hint = undefined; feedback = 'Turn rewound. Try a different idea.'; render(); focusBoard(); } break;
+    case 'toggle-sound': {
+      sounds.setMuted(!sounds.muted);
+      try { localStorage.setItem('holy-hell-muted', String(sounds.muted)); } catch { /* Visit-only setting. */ }
+      document.querySelectorAll<HTMLButtonElement>('[data-action="toggle-sound"]').forEach(button => {
+        button.textContent = `Sound: ${sounds.muted ? 'Off' : 'On'}`;
+        button.setAttribute('aria-pressed', String(!sounds.muted));
+      });
+      sfx('select'); announce(`Sound effects ${sounds.muted ? 'off' : 'on'}.`); break;
+    }
     case 'hint': showHint(); break;
     case 'sight': if (session.encounter.id === 'bishop') { showSight = !showSight; if (activeOverlay) closeOverlay(); render(); announce(showSight ? 'Bishop sight lines shown.' : 'Bishop sight lines hidden.'); } break;
-    case 'next': startEncounter(currentIndex < encounters.length - 1 ? currentIndex+1 : 0); break;
+    case 'next': startEncounter(currentIndex < encounters.length - 1 ? currentIndex+1 : 0); sfx('start'); break;
     case 'reset-progress': progress = emptyProgress(); saveProgress(); startEncounter(0); break;
   }
 }
-app.addEventListener('pointerdown', () => { inputMode = 'mouse'; document.querySelector('.square.cursor')?.classList.remove('cursor'); renderPrompts(); });
+app.addEventListener('pointerdown', () => { sounds.unlock(); inputMode = 'mouse'; document.querySelector('.square.cursor')?.classList.remove('cursor'); renderPrompts(); });
 app.addEventListener('click', (event) => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button || button.disabled) return;
   if (button.dataset.square) { clickSquare(button.dataset.square as Square); return; }
-  if (button.dataset.encounter !== undefined) { startEncounter(Number(button.dataset.encounter)); return; }
+  if (button.dataset.encounter !== undefined) { startEncounter(Number(button.dataset.encounter)); sfx('start'); return; }
   if (button.dataset.promotion && promotionMove) {
     const move = promotionMove; promotionMove = undefined; closeOverlay(); makeMove(move.from,move.to,button.dataset.promotion as Promotion); return;
   }
@@ -316,29 +362,27 @@ app.addEventListener('change', (event) => {
   const select = event.target as HTMLSelectElement;
   if (select.id !== 'theme-select' || !['system','light','dark'].includes(select.value)) return;
   theme = select.value as Theme; applyTheme();
+  sfx('select');
   try { localStorage.setItem('holy-hell-theme',theme); } catch { /* The choice works for this visit. */ }
 });
 function moveMenuFocus(direction: Direction): void {
   if (!activeOverlay) return;
   const panel = dialog(activeOverlay);
   const controls = [...panel.querySelectorAll<HTMLButtonElement | HTMLSelectElement>('button:not(:disabled),select')].filter((element) => element.getClientRects().length);
+  // Close is reachable at the end, so the first Down never jumps to the corner X.
+  controls.sort((a, b) => Number(a.classList.contains('close-button')) - Number(b.classList.contains('close-button')));
   const current = document.activeElement as HTMLElement;
-  if (!panel.contains(current)) { controls.find((control) => !control.classList.contains('close-button'))?.focus(); return; }
   if (current instanceof HTMLSelectElement && (direction === 'left' || direction === 'right')) {
     current.selectedIndex = (current.selectedIndex + (direction === 'left' ? -1 : 1) + current.options.length) % current.options.length;
     current.dispatchEvent(new Event('change',{bubbles:true})); return;
   }
-  const box = current.getBoundingClientRect(); const x = box.x+box.width/2; const y = box.y+box.height/2;
-  const horizontal = direction === 'left' || direction === 'right'; const sign = direction === 'left' || direction === 'up' ? -1 : 1;
-  const next = controls.filter((control) => control !== current).map((control) => {
-    const rect = control.getBoundingClientRect(); const dx = rect.x+rect.width/2-x; const dy = rect.y+rect.height/2-y;
-    return { control, forward:(horizontal ? dx : dy)*sign, across:Math.abs(horizontal ? dy : dx) };
-  }).filter((item) => item.forward > 2).sort((a,b) => a.forward+a.across*2-b.forward-b.across*2)[0];
-  next?.control.focus({preventScroll:true});
+  const next = controls[menuIndex(controls.indexOf(current as HTMLButtonElement), controls.length, direction)];
+  if (next) { next.focus({preventScroll:true}); sfx('navigate'); }
 }
 function handleControl(action: ControlAction): void {
   if (action === 'menu') { performAction('menu'); return; }
   if (action === 'back') {
+    sfx('back');
     if (activeOverlay) closeOverlay();
     else if (selected) { selected = undefined; hint = undefined; render(); focusBoard(); }
     else showMenu();
@@ -358,9 +402,11 @@ function handleControl(action: ControlAction): void {
   else performAction(action);
 }
 document.addEventListener('keydown', (event) => {
-  if (event.ctrlKey || event.metaKey || event.altKey || event.target instanceof HTMLSelectElement) return;
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  sounds.unlock();
   const actions: Record<string,ControlAction> = { ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',Escape:'back',x:'undo',y:'hint',l:'briefing',v:'sight' };
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  if (key === 'm' && !event.repeat) { event.preventDefault(); performAction('toggle-sound'); return; }
   if (key === 'f' && !event.repeat) { event.preventDefault(); void toggleFullscreen(); return; }
   if (actions[key]) {
     event.preventDefault(); if (event.repeat && !key.startsWith('Arrow')) return;
@@ -395,7 +441,12 @@ function pollControllers(time: number): void {
   }
   requestAnimationFrame(pollControllers);
 }
-document.addEventListener('visibilitychange', () => controller.reset());
-window.addEventListener('blur', () => controller.reset());
+document.addEventListener('visibilitychange', () => {
+  controller.reset();
+  app.classList.toggle('is-hidden', document.hidden);
+  if (document.hidden) { victoryReveal.pause(); sounds.stop(); }
+  else if (!activeOverlay) victoryReveal.resume();
+});
+window.addEventListener('blur', () => { controller.reset(); sounds.stop(); });
 requestAnimationFrame(pollControllers);
 startEncounter(currentIndex);

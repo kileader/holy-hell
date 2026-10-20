@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { adjacentIndex, ControllerInput } from '../src/controller';
+import { adjacentIndex, ControllerInput, menuIndex } from '../src/controller';
 import type { PadSnapshot } from '../src/controller';
 
 function pad(buttons: number[] = [], axes = [0, 0]): PadSnapshot {
@@ -60,5 +60,22 @@ describe('controller input', () => {
     expect(adjacentIndex(63, 'down')).toBe(63);
     expect(adjacentIndex(27, 'right')).toBe(28);
     expect(adjacentIndex(27, 'up')).toBe(19);
+  });
+
+  it('visits every menu control and wraps in both directions', () => {
+    // Enabled options, theme, sound, and Close stay reachable in every layout.
+    for (const count of [1, 2, 5, 9, 10]) {
+      for (const direction of ['up', 'down', 'left', 'right'] as const) {
+        let index = 0; const visited = new Set([index]);
+        for (let i = 0; i < count; i++) { index = menuIndex(index, count, direction); visited.add(index); }
+        expect(index).toBe(0); expect(visited.size).toBe(count);
+      }
+    }
+  });
+
+  it('recovers missing focus and tolerates a menu without enabled controls', () => {
+    expect(menuIndex(-1, 8, 'down')).toBe(0);
+    expect(menuIndex(9, 3, 'up')).toBe(0);
+    expect(menuIndex(0, 0, 'down')).toBe(-1);
   });
 });

@@ -28,6 +28,12 @@ npm run preview  # Serve the production build locally
 
 Opening `index.html` directly is not supported; use the development or preview server. The generated `dist/` folder works on static web hosts.
 
+Startup plays the supplied **Phicid Productions** splash on black before loading game input. A fresh key, mouse click, or gamepad button skips it without activating the mission screen. Retry and encounter changes do not replay it. Shared logo, timing, layout, and skip handling live unchanged in `studio/`; `src/entry.ts` owns the game handoff.
+
+Winning keeps the final position visible for **3.2 seconds**, with confetti, a gold board frame, and the move outcome above the board. Castling highlights both the king and rook moves; en passant includes the removed pawn's square. Menus and hidden tabs pause this interval. Undo, Retry, or changing encounters cancels a pending result panel. Progress saves as soon as the objective is completed.
+
+Original arcade sound effects cover navigation, selection, menus, moves, captures, checks, castling, promotion, hints, undo, mistakes, and victories. Toggle **Sound** in the game menu or press **M**; the mute preference survives reloads. Sounds are synthesized locally with Web Audio, with no soundtrack or external assets. Browser autoplay rules may require one click or keyboard press before controller-only audio works. Muting or leaving the window stops active effects; blocked sounds are discarded rather than played later.
+
 ## GitHub Pages
 
 Pushes to `main` run the [Pages workflow](.github/workflows/pages.yml): install the locked dependencies with Node 24, run tests, build, and deploy only `dist/`. Pull requests run the same checks without deploying. Vite uses relative asset paths so the game works under the `/holy-hell/` project URL. No account, API keys, or paid services are required to play.
@@ -70,8 +76,9 @@ Click **Fullscreen** or press **F** for browser fullscreen. A browser can requir
 | Hint | Y | Y |
 | Mission & tactic | L | LB |
 | Toggle bishop diagonals | V | RB |
+| Toggle sound effects | M | Game menu → Sound |
 
-Connect a controller and press then release a button to let the browser detect it. The game supports controllers exposed with the browser's **standard** mapping. It uses a stick dead zone, delayed direction repeat, and a neutral-input gate when connecting or returning to the window. The same confirm/back navigation works through promotion, victory, and menu panels; left/right changes the focused theme choice. Fullscreen should be entered with a click or keyboard gesture before using the controller.
+Connect a controller and press then release a button to let the browser detect it. The game supports controllers exposed with the browser's **standard** mapping. It uses a stick dead zone, delayed direction repeat, and a neutral-input gate when connecting or returning to the window. In every panel, **up/down cycles through all enabled controls and wraps**, with a persistent focus outline. **A** confirms, **B** closes, and **Start** toggles the game menu. Left/right changes the focused theme choice; up/down moves out of that setting to Sound or another option. The same navigation covers encounter pages, hints, promotion, and victory. Fullscreen should be entered with a click or keyboard gesture before using the controller.
 
 Native dialogs contain focus. Confetti respects reduced-motion settings. Bishop sight lines have a striped pattern as well as color, and square labels describe pieces and legal destinations. Hardware controller feel and broader browser/device compatibility still need human playtesting.
 
@@ -89,11 +96,17 @@ src/encounters.ts  Authored positions, missions, dialogue, and lessons
 src/game.ts        Rules integration, objectives, opponent, hints, undo
 src/progress.ts    Sequential unlocks and validated local-save format
 src/controller.ts Standard gamepad mapping, neutral gate, and cursor navigation
+src/entry.ts      Studio splash and isolated startup handoff
+src/celebration.ts Final-move highlights and pausable result timing
+src/sound.ts       Original synthesized effects and gesture-unlocked playback
 src/art.ts         Original SVG characters, chess pieces, and icons
 src/main.ts        Board interaction, panels, fullscreen, themes, and UI rendering
 src/style.css      Fixed viewport, responsive presentation, and reduced motion
 tests/game.test.ts Encounter solutions and behavior regression checks
 tests/controller.test.ts Controller transitions, repeat timing, and board edges
+tests/celebration.test.ts Result timing, cancellation, and compound-move feedback
+tests/sound.test.ts Waveform bounds, cue routing, mute, and autoplay handling
+tests/startup.test.ts Shared logo timing and fresh gamepad press handling
 ```
 
 See [the prototype verification record](docs/verification.md) for tested flows and the remaining human playtest questions.
@@ -109,6 +122,7 @@ The current runtime is sufficient for this board-based slice. Fullscreen and con
 5. Are the hints helpful without doing all the thinking, and is the humor working?
 6. Does the controller cursor feel predictable, and do the short panels and larger text work from the couch?
 7. Can players explain why castling/en passant was legal, why the pinned knight could not move, and why the final queen sacrifice worked?
+8. Does the celebration leave enough time to understand the final move, and are the sound effects pleasant at your normal volume?
 
 The move-count stars are optional, and the boss is intentionally asymmetric in material. This first version tests the encounter loop; it does not establish learning transfer or promise rating gains. There is no procedural campaign, deckbuilding, opening trainer, account system, analytics, music, or paid AI integration.
 
