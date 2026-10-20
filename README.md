@@ -2,6 +2,8 @@
 
 A small, humorous chess-learning game: real chess rules, ridiculous characters, and nine authored encounters. Short lessons teach tactics and special moves, with two boss encounters to put ideas together.
 
+**[Play Holy Hell!](https://kileader.github.io/holy-hell/)** · [Source on GitHub](https://github.com/kileader/holy-hell)
+
 Holy Hell! is a standalone prototype. Chess Lab remains the personal game-analysis and study project. Positions use FEN, and moves retain standard SAN/UCI notation, so a future connection is possible without coupling the apps today.
 
 ## Play locally
@@ -23,6 +25,10 @@ npm run preview  # Serve the production build locally
 ```
 
 Opening `index.html` directly is not supported; use the development or preview server. The generated `dist/` folder works on static web hosts.
+
+## GitHub Pages
+
+Pushes to `main` run the [Pages workflow](.github/workflows/pages.yml): install the locked dependencies with Node 24, run tests, build, and deploy only `dist/`. Pull requests run the same checks without deploying. Vite uses relative asset paths so the game works under the `/holy-hell/` project URL. No account, API keys, or paid services are required to play.
 
 ## The nine encounters
 
