@@ -9,7 +9,7 @@ import { encounters } from './encounters';
 import { Session, bishopSight, describeMove, isRookFork, pieceNames, SQUARES } from './game';
 import type { Promotion } from './game';
 import type { Square } from 'chess.js';
-import { complete, emptyProgress, isUnlocked, parseProgress, storageKey } from './progress';
+import { complete, emptyProgress, isUnlocked, parseProgress, startingEncounter, storageKey } from './progress';
 import { characterArt, icon, pieceSvg } from './art';
 import { adjacentIndex, ControllerInput, menuIndex } from './controller';
 import type { ControlAction, Direction } from './controller';
@@ -36,7 +36,7 @@ systemTheme.addEventListener('change', () => { if (theme === 'system') applyThem
 let progress = emptyProgress();
 let storageAvailable = true;
 try { progress = parseProgress(localStorage.getItem(storageKey)); } catch { storageAvailable = false; }
-let currentIndex = Math.min(progress.completed.length, encounters.length - 1);
+let currentIndex = startingEncounter(progress);
 let session = new Session(encounters[currentIndex]);
 let selected: Square | undefined;
 let focusSquare: Square = 'b5';
@@ -197,7 +197,7 @@ function startEncounter(index: number): void {
 }
 function showBriefing(lesson = false): void {
   const e = session.encounter;
-  showOverlay('briefing', `<p class="eyebrow">ENCOUNTER 0${currentIndex + 1}${e.boss ? ' · BOSS' : ''}</p><h2 id="briefing-title">${lesson ? e.concept : e.name}</h2><div class="briefing-content"><div class="briefing-art ${e.portrait}">${characterArt(e.portrait)}</div><div>${lesson ? `<p>${e.lesson}</p><p class="bonus-copy">${icon('star')} Optional star: ${e.par} moves or fewer, without hints or undo.</p>` : `<p class="character-role">${e.characterRole}</p>${e.setup ? `<p class="setup-copy">${e.setup}</p>` : ''}<p class="briefing-objective">${e.objective}</p><p class="briefing-quote">${e.character}<br/>“${e.dialogue}”</p>`}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="${lesson ? 'briefing' : 'lesson'}">${lesson ? 'Mission' : 'Learn the tactic'}</button><button class="primary-button" data-action="close-overlay" autofocus>Let’s play ${icon('arrow')}</button></div>`, lesson ? 'briefing-dialog lesson-briefing' : 'briefing-dialog');
+  showOverlay('briefing', `<p class="eyebrow">${progress.completed.includes(e.id) ? 'REPLAY' : 'ENCOUNTER'} 0${currentIndex + 1}${e.boss ? ' · BOSS' : ''}</p><h2 id="briefing-title">${lesson ? e.concept : e.name}</h2><div class="briefing-content"><div class="briefing-art ${e.portrait}">${characterArt(e.portrait)}</div><div>${lesson ? `<p>${e.lesson}</p><p class="bonus-copy">${icon('star')} Optional star: ${e.par} moves or fewer, without hints or undo.</p>` : `<p class="character-role">${e.characterRole}</p>${e.setup ? `<p class="setup-copy">${e.setup}</p>` : ''}<p class="briefing-objective">${e.objective}</p><p class="briefing-quote">${e.character}<br/>“${e.dialogue}”</p>`}</div></div><div class="dialog-actions"><button class="secondary-button" data-action="${lesson ? 'briefing' : 'lesson'}">${lesson ? 'Mission' : 'Learn the tactic'}</button><button class="primary-button" data-action="close-overlay" autofocus>Let’s play ${icon('arrow')}</button></div>`, lesson ? 'briefing-dialog lesson-briefing' : 'briefing-dialog');
 }
 function showCampaign(page = Math.floor(currentIndex/campaignPageSize)): void {
   const pages = Math.ceil(encounters.length/campaignPageSize);

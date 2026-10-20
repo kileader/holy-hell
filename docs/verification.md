@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-- `npm test`: 93 passing tests.
+- `npm test`: 96 passing tests.
 - `npm run build`: TypeScript check and Vite production build pass.
 - All nine starting FENs are valid, have White to move, and do not place the nonmoving black king in check. Check Yourself intentionally starts with White in check.
 - Each authored solution clears its objective against the actual deterministic opponent. The initial knight fork also wins the rook after every legal king defense.
@@ -18,6 +18,7 @@
 - Audio checks render all 15 cues to deterministic PCM and verify finite samples, bounded peaks, short duration, and silent edges. Playback checks cover move-specific cues, lazy device creation, immediate mute/stop, no queued autoplay burst, navigation throttling, bounded polyphony, and unavailable audio support.
 - Shared splash checks preserve the 2.4-second sine fade sequence and copied controller button states, including held and newly connected controllers.
 - Menu traversal checks visit and wrap through every enabled control in both directions across varying panel sizes, and recover from missing focus or empty control lists.
+- Startup selection checks cover fresh saves, every partial campaign including an unfinished ninth encounter, and a fully cleared campaign returning to encounter one without changing its stars or unlocks.
 
 ## Browser checks
 
@@ -49,6 +50,7 @@ Tested in the Codex in-app browser:
 - Castled through the UI: the board showed king g1 and rook f1, highlighted all four affected squares, and displayed 36 confetti particles with no dialog covering the move. The result panel opened after the board interval. Menu preserved the remaining interval; Undo and Retry canceled the pending result.
 - Checked the celebration at 1280×720 and 320×568, and sound/settings menus at 320×568 and 844×390. No page overflow; theme value and mute control remained readable. M and the menu toggle agreed, mute survived reload, and warning/error logs were empty.
 - Used the shared directional navigation through every menu option, theme, Sound, and Close, confirmed wraparound, adjusted the theme, toggled Sound with confirm, and backed out from the theme without getting trapped. Focus had a visible 4px outline after switching away from mouse input.
+- Reproduced the completed-save startup bug locally: nine saved clears opened the ninth boss. After the fix, the same save opened Horsie Havoc with a Replay 01 label on full reload; encounter selection still showed 9/9 clears and the earned stars.
 
 ## Still needs Kevin's playtest
 

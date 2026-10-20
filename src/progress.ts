@@ -5,6 +5,12 @@ export interface Progress { version: 1; completed: EncounterId[]; bonuses: Encou
 export const storageKey = 'holy-hell-progress-v1';
 export function emptyProgress(): Progress { return { version: 1, completed: [], bonuses: [] }; }
 
+/** Continue unfinished campaigns; a completed campaign begins its replay at lesson one. */
+export function startingEncounter(progress: Progress): number {
+  const next = encounters.findIndex(encounter => !progress.completed.includes(encounter.id));
+  return next < 0 ? 0 : next;
+}
+
 export function parseProgress(raw: string | null): Progress {
   try {
     const data: unknown = JSON.parse(raw ?? 'null');

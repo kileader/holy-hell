@@ -4,7 +4,7 @@ import type { Square } from 'chess.js';
 import { encounterById, encounters } from '../src/encounters';
 import { Session, bishopSight, chooseMove } from '../src/game';
 import type { Promotion } from '../src/game';
-import { complete, emptyProgress, isUnlocked, parseProgress } from '../src/progress';
+import { complete, emptyProgress, isUnlocked, parseProgress, startingEncounter } from '../src/progress';
 
 function play(session: Session, lan: string): void {
   const move = session.play(lan.slice(0, 2) as Square, lan.slice(2, 4) as Square, lan[4] as Promotion | undefined);
@@ -266,6 +266,29 @@ describe('rules integration and state recovery', () => {
 });
 
 describe('progression and browser save validation', () => {
+  it('starts a new campaign at Horsie Havoc', () => {
+    expect(startingEncounter(emptyProgress())).toBe(0);
+  });
+
+  it('continues at the first uncleared encounter, including an unfinished final boss', () => {
+    let saved = emptyProgress();
+    for (let index = 0; index < encounters.length; index++) {
+      expect(startingEncounter(parseProgress(JSON.stringify(saved)))).toBe(index);
+      saved = complete(saved, encounters[index].id, true);
+    }
+  });
+
+  it('reopens a completed campaign at lesson one without clearing stars or unlocks', () => {
+    let saved = emptyProgress();
+    for (const encounter of encounters) saved = complete(saved, encounter.id, true);
+    saved = parseProgress(JSON.stringify(saved));
+    const before = JSON.stringify(saved);
+    expect(startingEncounter(saved)).toBe(0);
+    expect(JSON.stringify(saved)).toBe(before);
+    expect(saved.bonuses).toHaveLength(9);
+    expect(encounters.every((_, index) => isUnlocked(saved, index))).toBe(true);
+  });
+
   it('keeps the original three clears and unlocks the first added lesson', () => {
     const saved = parseProgress('{"version":1,"completed":["horsie","escort","bishop"],"bonuses":["horsie","bishop"]}');
     expect(saved.completed).toEqual(['horsie','escort','bishop']);
