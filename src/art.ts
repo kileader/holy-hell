@@ -1,7 +1,7 @@
 import type { PieceSymbol } from 'chess.js';
 import type { EncounterId } from './encounters';
 
-export function icon(name: 'arrow' | 'retry' | 'undo' | 'bulb' | 'lock' | 'check' | 'target' | 'star' | 'book' | 'x' | 'eye'): string {
+export function icon(name: 'arrow' | 'retry' | 'undo' | 'bulb' | 'lock' | 'check' | 'target' | 'star' | 'book' | 'x' | 'eye' | 'moon' | 'expand' | 'menu'): string {
   const paths = {
     arrow: '<path d="M4 12h15m-6-6 6 6-6 6"/>',
     retry: '<path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/>',
@@ -14,6 +14,9 @@ export function icon(name: 'arrow' | 'retry' | 'undo' | 'bulb' | 'lock' | 'check
     book: '<path d="M12 5C8 2 4 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-2-1-6-2-10 1Zm0 0v15"/>',
     x: '<path d="m6 6 12 12M6 18 18 6"/>',
     eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    moon: '<path d="M20 14A8 8 0 0 1 10 4a8.5 8.5 0 1 0 10 10Z"/>',
+    expand: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   };
   return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 }
@@ -31,20 +34,151 @@ export function pieceSvg(type: PieceSymbol, color: 'w' | 'b'): string {
   return `<svg class="chess-piece ${color === 'w' ? 'ivory' : 'ink'}" viewBox="0 0 64 64" aria-hidden="true"><g stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">${shapes[type]}<path d="M18 50h28l3 6H15Z"/></g></svg>`;
 }
 
-const burst = '<path d="m138 16 17 28 31-12 5 34 35 4-15 29 24 25-30 16 5 34-35-2-13 32-25-21-28 20-10-33-34-1 9-32-27-21 29-19-4-34 33 6Z" fill="#edb845"/>';
-
 export function characterArt(id: EncounterId): string {
-  const character = id === 'horsie'
-    ? `<g transform="rotate(-8 130 120)" stroke="#293b38" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M78 186c3-37 37-47 35-78L75 126l-12-25 51-44 3-28 18 17 16-5 34 33 9 41-29 61 22 19H75Z" fill="#f7f0dc"/>
-      <path d="m147 51 20-12-2 26 18 1 2 21 13 7-10 20 6 18-16 9-1 18-15 7" fill="#e75435"/>
-      <path d="m79 101 11 7 13-10m7 27 20-23m-6-43 17 3" fill="none"/>
-      <path d="m117 70 45 6-8 17-18-2-5-12-8 9-15-2Z" fill="#293b38"/><path d="m143 79 8 2m-33-5 5 1" stroke="#f7f0dc"/>
-      <path d="m123 135 16 8 13-11" fill="none"/><path d="M71 191h119l9 16H62Z" fill="#f7f0dc"/>
-      <path d="m58 62 7-9m119 108 12 4m-137-9 5 5" stroke="#e75435"/>
-    </g><g fill="#293b38" font-family="Arial,sans-serif" font-size="19" font-weight="900"><text x="30" y="49" transform="rotate(-15 30 49)">L!</text><text x="200" y="69" transform="rotate(13 200 69)">L!</text></g>`
-    : id === 'escort'
-      ? `<g stroke="#293b38" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m87 185 15-58h53l17 58Z" fill="#f7f0dc"/><circle cx="128" cy="91" r="40" fill="#f7f0dc"/><path d="M102 83h8m35 0h8m-37 19q13 15 26-1" fill="none"/><path d="m95 151-25-22-17 7m111 15 21-38 14 2" fill="none"/><path d="m101 177-12 20m65-20 15 20" fill="none"/><path d="M81 194h99l9 15H73Z" fill="#f7f0dc"/><path d="m109 55-5-28 18 14 11-23 10 23 17-13-4 31Z" fill="#e75435"/><path d="m188 80 8-13m-143 17 10 6m123 85 14 3" stroke="#e75435"/></g><text x="24" y="48" fill="#293b38" font-family="Arial,sans-serif" font-size="18" font-weight="900" transform="rotate(-10 24 48)">BIG</text><text x="26" y="66" fill="#293b38" font-family="Arial,sans-serif" font-size="18" font-weight="900" transform="rotate(-10 26 66)">DREAMS.</text>`
-      : `<g stroke="#293b38" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="131" cy="126" r="77" fill="none" stroke-dasharray="8 10" opacity=".45"/><path d="M131 37v26m0 126v26m-89-89h26m128 0h25" fill="none"/><path d="m95 190 13-53h45l17 53Z" fill="#293b38"/><path d="M101 83h58v41c0 39-58 39-58 0Z" fill="#f7f0dc"/><path d="M91 97c0-34 25-66 40-78 15 12 40 44 40 78Z" fill="#e75435"/><path d="M131 36v39m-12-23h24" stroke="#f7f0dc"/><path d="m105 109 13 5m27-1 11-5m-37 25 22-1" fill="none"/><circle cx="151" cy="117" r="16" fill="none"/><path d="m166 125 18 19m-81 17-23-14m2-3-20 4" fill="none"/><path d="M90 192h86l9 17H80Z" fill="#293b38"/></g><text x="19" y="47" fill="#293b38" font-family="Arial,sans-serif" font-size="18" font-weight="900" transform="rotate(-12 19 47)">BOSS!</text>`;
-  return `<svg class="character-art" viewBox="0 0 260 225" role="img" aria-label="${id === 'horsie' ? 'A smug cartoon knight wearing sunglasses' : id === 'escort' ? 'An ambitious little pawn dreaming of a crown' : 'A scowling bishop with an enormous red bishop’s hat and a monocle'}">${burst}${character}</svg>`;
+  if (id === 'bishop') return bishopSniperArt();
+  return id === 'horsie' ? warhorseArt() : royalPawnArt();
+}
+
+let portraitSequence = 0;
+let sniperSequence = 0;
+
+function warhorseArt(): string {
+  const id = `warhorse-${++portraitSequence}`;
+  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="Sir Neighs-a-Lot, a furious armored warhorse with a flaming mane, a steel faceplate, and an unnecessarily enormous sword">
+    <defs>
+      <radialGradient id="${id}-halo"><stop stop-color="#ed6c24" stop-opacity=".5"/><stop offset="1" stop-color="#ed6c24" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}-steel" x2="1" y2="1"><stop stop-color="#c5d5ca"/><stop offset=".4" stop-color="#718d85"/><stop offset="1" stop-color="#263b36"/></linearGradient>
+      <linearGradient id="${id}-fire" x2="0" y2="1"><stop stop-color="#f9d773"/><stop offset=".45" stop-color="#ff813e"/><stop offset="1" stop-color="#aa292c"/></linearGradient>
+    </defs>
+    <rect width="300" height="300" rx="8" fill="#111d19"/>
+    <circle cx="158" cy="138" r="138" fill="url(#${id}-halo)"/>
+    <g fill="none" stroke="#9b6e42" stroke-width="1.5" opacity=".7"><circle cx="150" cy="148" r="106"/><circle cx="150" cy="148" r="87" stroke-dasharray="3 12"/><path d="m51 50 23 24m151 151 23 23M44 148h25m162 0h25M150 43v22"/></g>
+    <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <g transform="rotate(24 235 133)">
+        <path d="m222 178 1-132 12-27 13 27-1 132Z" fill="url(#${id}-steel)"/>
+        <path d="M235 35v130" stroke="#e7ebce" stroke-width="2"/>
+        <path d="m207 173 28-8 29 8-3 12-26-5-25 5Z" fill="#d3ad59"/>
+        <path d="M229 182h13v43h-13Z" fill="#a63c30"/><path d="m226 225 9 10 10-10-10-7Z" fill="#dfb961"/>
+      </g>
+      <path d="m148 68 16-38 15 26 12-43 18 42 26-21-6 44 31-10-18 35 31 9-28 27 19 22-31 8 9 34-34-10 3 32-33-19-14-91Z" fill="url(#${id}-fire)"/>
+      <path d="m173 72 14-30 8 43 21-19-9 42 27-5-21 32 17 10-19 10" fill="none" stroke="#ffe09a" stroke-width="3"/>
+      <path d="m129 143-43 24-38 99 54-11 29 23 32-17 58 12-21-92-24-36Z" fill="#7e292b"/>
+      <path d="m118 158-27 8-12 38 30 14 17-31m49-26 33 15 14 32-32 15-24-34" fill="url(#${id}-steel)"/>
+      <path d="m89 169-7-20 20 12m101 15 9-22 7 29m-8 8 24-7-12 21" fill="#cfba79"/>
+      <path d="m115 178-13 57 22 29h51l21-29-16-58Z" fill="url(#${id}-steel)"/>
+      <path d="m113 195 39 14 29-15-10 35-20 17-23-17Z" fill="#273f37"/>
+      <path d="m151 211-11 16 11 11 10-11Z" fill="#ffb34e" stroke="#c57538" stroke-width="2"/>
+      <path d="m112 242 35 13 36-13m-28-31 1 33" fill="none" stroke="#d0c48d" stroke-width="2"/>
+      <path d="m149 66 11-49 15 19 4 44m-60-12-8-46 25 22 10 26" fill="#b88c60"/>
+      <path d="m159 52 3-22 8 19m-49-15 7 23" fill="none" stroke="#e8bc86" stroke-width="3"/>
+      <path d="M132 57c-16 0-26 11-33 22l-24 22c-21 1-34 11-32 27 3 16 29 22 49 12l21-6 6 24 23 25 32-16-4-30c18-29 23-59 1-75Z" fill="#b98a59"/>
+      <path d="m120 117 8 32 16 20 19-11-4-28" fill="#d0a16a" stroke="none"/>
+      <path d="M76 103c-18-1-34 10-33 25 2 12 20 20 38 16l14-10-5-24Z" fill="#e0bd8b"/>
+      <ellipse cx="58" cy="121" rx="5" ry="7" transform="rotate(24 58 121)" fill="#24382a" stroke-width="2"/>
+      <path d="M49 135c13 6 27 4 42-5" fill="none" stroke="#533c29" stroke-width="3"/>
+      <path d="m104 75 28-20 39 7 13 26-12 25-26 20-19-17-15-14-13-1Z" fill="url(#${id}-steel)"/>
+      <path d="m110 81 36-11 17 21-21 10-25-1Z" fill="#172921"/>
+      <path d="m117 86 23-5-7 11-16 1Z" fill="#ffcb63" stroke="#f8df9b" stroke-width="1.5"/>
+      <path d="m91 103 10 26-8 14m10-21 21-15m23 1 13-7-6 20" fill="none" stroke="#d2c390" stroke-width="3"/>
+      <path d="m94 111-8 3 5 14 9-3Z" fill="#536b55" stroke-width="2"/>
+      <path d="m89 216-11 18 9 18 17-6 7-19Zm110-3 14 20-9 19-19-6-6-19Z" fill="#697f6c"/>
+      <path d="m82 231 17 10m94-10 14 10" stroke="#cec49a" stroke-width="2"/>
+      <path d="M84 270h130l14 21H70Z" fill="#20332a" stroke="#8c9b7a" stroke-width="2"/>
+      <path d="M96 278h107" stroke="#d2b46e" stroke-width="2"/>
+    </g>
+    <g fill="#ffc66b"><path d="m52 48 3 7-3 7-3-7Zm211 126 3 7-3 7-3-7Zm-29 70 2 5-2 5-2-5Z"/><circle cx="70" cy="143" r="2"/><circle cx="247" cy="43" r="2"/></g>
+  </svg>`;
+}
+
+function royalPawnArt(): string {
+  const id = `overlord-${++portraitSequence}`;
+  return `<svg class="character-art" viewBox="0 0 300 300" role="img" aria-label="Pip, a tiny pawn overlord in absurdly huge gold armor, wearing a towering crown and wielding a massive royal war hammer">
+    <defs>
+      <radialGradient id="${id}-halo"><stop stop-color="#b28b2f" stop-opacity=".5"/><stop offset="1" stop-color="#b28b2f" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}-gold" x2="1" y2="1"><stop stop-color="#ffe8a0"/><stop offset=".45" stop-color="#c89b49"/><stop offset="1" stop-color="#78532d"/></linearGradient>
+      <linearGradient id="${id}-cape" x2="1" y2="1"><stop stop-color="#c5453d"/><stop offset="1" stop-color="#5d222c"/></linearGradient>
+    </defs>
+    <rect width="300" height="300" rx="8" fill="#111d19"/>
+    <circle cx="148" cy="132" r="138" fill="url(#${id}-halo)"/>
+    <g fill="none" stroke="#8b8149" stroke-width="1.5" opacity=".7"><circle cx="150" cy="145" r="105"/><circle cx="150" cy="145" r="86" stroke-dasharray="3 12"/><path d="M150 20v25m-125 100h25m199 0h25M44 39l24 24m167 164 24 24"/></g>
+    <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <path d="m108 135-37 16-39 121 51-11 24 21 42-16 42 16 25-21 48 11-34-117-41-20Z" fill="url(#${id}-cape)"/>
+      <path d="m69 197-14 52 25-10m148-40 13 49-27-10m-103 6-8 24m81-25 9 25" fill="none" stroke="#e66d50" stroke-width="2"/>
+      <g transform="rotate(-17 65 148)">
+        <path d="M59 73h13v161H59Z" fill="#6e5542"/><path d="M62 104v112" stroke="#d5b26b" stroke-width="2"/>
+        <path d="M28 48h75l13 18-13 28H28L15 66Z" fill="url(#${id}-gold)"/>
+        <path d="m29 48 9 17-10 29m76-46-10 18 9 28" fill="none" stroke="#f7df91" stroke-width="3"/>
+        <path d="m62 52-14 17 14 17 14-17Z" fill="#bf3d36"/>
+        <path d="m62 59-7 10 7 10 7-10Z" fill="#ff9c60" stroke="none"/>
+      </g>
+      <path d="m102 142-30 6-19 33 22 30 36-9 13-41m62-19 35 8 24 33-23 30-37-14-11-35" fill="url(#${id}-gold)"/>
+      <path d="m74 147-6-20 25 17m121 8 6-25 13 37m-4 7 23-9-10 23" fill="#ddd2a6"/>
+      <path d="m73 171 24-11m-28 22 27-10m109-10 20 13m-22-1 24 13" stroke="#f4d58b" stroke-width="2"/>
+      <path d="m116 153-8 58-16 44 56 18 59-18-18-44-8-58Z" fill="url(#${id}-gold)"/>
+      <path d="m125 171 24 9 24-9-3 31-20 19-22-19Z" fill="#284536"/>
+      <path d="m149 183-9 13 9 13 9-13Z" fill="#f6d378" stroke="#e2b762" stroke-width="2"/>
+      <path d="m113 226 36 13 39-13m-79 16 40 13 45-13" fill="none" stroke="#efda9a" stroke-width="2"/>
+      <circle cx="149" cy="115" r="32" fill="#e4d6ad"/>
+      <path d="M119 107q29 10 59 0l-5 22-24 12-26-13Z" fill="#21382d"/>
+      <path d="m128 119 12 2m17 0 12-3" stroke="#ffe293" stroke-width="3"/>
+      <path d="M139 147h21l9 10h-39Z" fill="#efe3b5"/>
+      <path d="m112 96-14-56 26 20 24-41 26 41 26-20-14 56-36 8Z" fill="url(#${id}-gold)"/>
+      <path d="m112 80 37 8 38-8m-38-53 1 47" fill="none" stroke="#fff0b5" stroke-width="3"/>
+      <path d="m148 55-11 15 12 13 12-14Z" fill="#c73b36"/>
+      <circle cx="98" cy="39" r="5" fill="#f8d98c"/><circle cx="148" cy="19" r="6" fill="#f8d98c"/><circle cx="200" cy="39" r="5" fill="#f8d98c"/>
+      <path d="m61 200 18-5 12 12-4 22-22 5-15-14Zm140-4 19 8 13 20-10 15-26-8-9-17Z" fill="url(#${id}-gold)"/>
+      <path d="m62 211 17 9m-15-1 12 7m125-15 15 12m-17-3 13 10" stroke="#f9e7ac" stroke-width="2"/>
+      <path d="M86 269h126l14 21H73Z" fill="#20332a" stroke="#9e9b6e" stroke-width="2"/>
+      <path d="M96 278h107" stroke="#e6c87f" stroke-width="2"/>
+    </g>
+    <g fill="#ffe09a"><path d="m244 64 3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM47 247l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/><circle cx="239" cy="122" r="2"/><circle cx="80" cy="111" r="2"/></g>
+  </svg>`;
+}
+
+function bishopSniperArt(): string {
+  const paintId = `sniper-${++sniperSequence}`;
+  return `<svg class="character-art sniper-art" viewBox="0 0 300 300" role="img" aria-label="Bishop Deadeye, an armored sniper in a crimson bishop’s mitre and a torn cloak, carrying a long scoped rifle">
+    <defs>
+      <radialGradient id="${paintId}-halo"><stop stop-color="#d84432" stop-opacity=".38"/><stop offset="1" stop-color="#d84432" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${paintId}-cloak" x2=".8" y2="1"><stop stop-color="#52635b"/><stop offset="1" stop-color="#15231f"/></linearGradient>
+      <linearGradient id="${paintId}-mitre" x2="1" y2="1"><stop stop-color="#ff7753"/><stop offset=".55" stop-color="#c82c2c"/><stop offset="1" stop-color="#7f2029"/></linearGradient>
+    </defs>
+    <rect width="300" height="300" rx="8" fill="#111d19"/>
+    <circle cx="154" cy="138" r="131" fill="url(#${paintId}-halo)"/>
+    <g fill="none" stroke="#63836d" stroke-width="1.5" opacity=".65">
+      <circle cx="150" cy="143" r="107"/><circle cx="150" cy="143" r="86" stroke-dasharray="4 13"/>
+      <path d="M150 20v30m0 189v31M26 143h29m191 0h29M47 40l31 31m143 143 32 32M47 246l31-32M222 71l31-31"/>
+    </g>
+    <g stroke="#101b18" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <path d="m113 133-39 33-28 107 51-14 18 23 27-17 40 18 20-20 47 10-25-101-43-38Z" fill="url(#${paintId}-cloak)"/>
+      <path d="m109 135-30 24-7 38 28-9 15-29m64-23 32 25 10 39-34-12-16-29" fill="#788773"/>
+      <path d="m92 163 10 5m-18 8 12 5m99-16-10 6m19 7-13 6" stroke="#b7baa0" stroke-width="2"/>
+      <path d="m114 159 7 86 22 18 34-21 9-82" fill="#22362d"/>
+      <path d="m139 177 3 73m15-73-4 73" stroke="#b5a05c" stroke-width="3"/>
+      <path d="M106 94h79l-7 47-30 24-31-22Z" fill="#dcc7a0"/>
+      <path d="m105 109 79-8-7 26-24-1-19 15-23-14Z" fill="#192821"/>
+      <path d="m119 116 17-3m23-3 15-3" stroke="#f7d982" stroke-width="3"/>
+      <path d="m148 120-4 14 10 1m-14 12 18-4" fill="none" stroke="#885447" stroke-width="2"/>
+      <path d="m173 97-16 47" fill="none" stroke="#ac3e34" stroke-width="2"/>
+      <path d="M99 105c-1-37 25-74 47-94 25 19 51 57 48 92l-48-7Z" fill="url(#${paintId}-mitre)"/>
+      <path d="m146 24 1 60m-17-39 33-1" fill="none" stroke="#f4d58b" stroke-width="5"/>
+      <path d="m103 90 44-8 43 7" fill="none" stroke="#f0b965" stroke-width="3"/>
+      <path d="m148 13 20 43 8 35" fill="none" stroke="#ff9970" stroke-width="2"/>
+      <g transform="rotate(-19 150 199)">
+        <path d="m66 191-28 12v20l35-9 16 9 24-25Z" fill="#6f7968"/>
+        <path d="M72 184h123l12 9-13 17H90l-13 13-13-8Z" fill="#243a32"/>
+        <path d="M170 188h95v13h-95Z" fill="#7e8d7b"/><path d="M260 183h23v22h-23Z" fill="#273d33"/>
+        <path d="m111 207 5 24 13-3-2-22m19-1v14h17l9-14" fill="#728270"/>
+        <path d="M116 180v-9h52v11" fill="none" stroke="#7a8c78" stroke-width="5"/>
+        <rect x="103" y="157" width="74" height="18" rx="6" fill="#3d5546"/>
+        <path d="M167 153h18v26h-18Z" fill="#9b3130"/>
+        <ellipse cx="185" cy="166" rx="6" ry="12" fill="#ff6a46" stroke="#f8b47d" stroke-width="2"/>
+        <path d="M79 192h14m5 0h8m104 2h41" stroke="#b7c2a8" stroke-width="2"/>
+      </g>
+      <path d="m91 204 16 3 14 17-8 12-17-13-12-7Zm87-34 18 5 15 21-10 11-13-21-15-4Z" fill="#b4b79a"/>
+      <path d="m76 249 13-35m114 24-9-25m-69 28-4 19m48-20 9 22" fill="none" stroke="#788b71" stroke-width="2"/>
+      <path d="M74 278h151l12 13H62Z" fill="#111d19" stroke="#6a7f68" stroke-width="2"/>
+    </g>
+    <g fill="#ff825c"><circle cx="246" cy="70" r="3"/><path d="M246 57v7m0 12v7m-13-13h7m12 0h7" stroke="#ff825c" stroke-width="1.5"/></g>
+  </svg>`;
 }
