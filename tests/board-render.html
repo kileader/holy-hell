@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#141c19">
+    <title>Board repaint regression</title>
+    <style>
+      #repaint-check { position: fixed; z-index: 100; inset: auto 12px 8px; padding: 8px; background: #101b16; color: #fff; border: 2px solid #edb845; display: flex; align-items: center; gap: 12px; font: 16px sans-serif; }
+      #repaint-check button { padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <aside id="repaint-check"><button id="run-check">Run board repaint check</button><output id="check-result">Ready</output></aside>
+    <script type="module">
+      import '../src/main.ts';
+      // A development-only browser regression using the same UI handlers as gameplay.
+      document.querySelector('#briefing-dialog [data-action="close-overlay"]').click();
+      document.querySelector('[data-action="campaign"]').click();
+      while (!document.querySelector('[data-action="campaign-prev"]').disabled) {
+        document.querySelector('[data-action="campaign-prev"]').click();
+      }
+      document.querySelector('[data-encounter="0"]').click();
+      document.querySelector('#briefing-dialog [data-action="close-overlay"]').click();
+      document.querySelector('#run-check').onclick = () => {
+        requestAnimationFrame(() => {
+          const output = document.querySelector('#check-result');
+          const piece = document.querySelector('.square[aria-label*="white"]');
+          const square = piece.dataset.square;
+          const originalWidth = document.querySelector('.board-frame').getBoundingClientRect().width;
+          try {
+            for (let i = 0; i < 4; i++) {
+              const button = document.querySelector(`[data-square="${square}"]`);
+              const selected = button.getAttribute('aria-pressed');
+              // Gamepad actions execute inside requestAnimationFrame. Measure before
+              // another frame can repair a board that briefly collapsed during render.
+              button.click();
+              const width = document.querySelector('.board-frame').getBoundingClientRect().width;
+              if (width <= 20 || width !== originalWidth) throw new Error(`Board collapsed: ${originalWidth}px → ${width}px`);
+              if (document.querySelector(`[data-square="${square}"]`).getAttribute('aria-pressed') === selected) throw new Error('Selection did not change');
+            }
+            document.querySelector(`[data-square="${square}"]`).click();
+            const destination = document.querySelector('.square[aria-label*="legal move"], .square[aria-label*="legal capture"]');
+            if (!destination) throw new Error('No legal destination found for move check');
+            destination.click();
+            if (document.querySelector('.board-frame').getBoundingClientRect().width !== originalWidth) throw new Error('Board collapsed after a move');
+            document.querySelector('#game [data-action="undo"]').click();
+            if (document.querySelector('.board-frame').getBoundingClientRect().width !== originalWidth) throw new Error('Board collapsed after Undo');
+            output.textContent = `PASS: board stayed ${originalWidth}px through four selections, a move, and Undo in one frame.`;
+          } catch (error) { output.textContent = `FAIL: ${error.message}`; }
+        });
+      };
+    </script>
+  </body>
+</html>

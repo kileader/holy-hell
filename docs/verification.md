@@ -51,6 +51,8 @@ Tested in the Codex in-app browser:
 - Checked the celebration at 1280×720 and 320×568, and sound/settings menus at 320×568 and 844×390. No page overflow; theme value and mute control remained readable. M and the menu toggle agreed, mute survived reload, and warning/error logs were empty.
 - Used the shared directional navigation through every menu option, theme, Sound, and Close, confirmed wraparound, adjusted the theme, toggled Sound with confirm, and backed out from the theme without getting trapped. Focus had a visible 4px outline after switching away from mouse input.
 - Reproduced the completed-save startup bug locally: nine saved clears opened the ninth boss. After the fix, the same save opened Horsie Havoc with a Replay 01 label on full reload; encounter selection still showed 9/9 clears and the earned stars.
+- Added `/tests/board-render.html` as a development-only real-browser regression. Before the sizing fix, selection inside an animation frame collapsed the board from 462px to its 20px border/padding minimum before the next frame. Rendering now fits the board synchronously, before a controller frame can paint it collapsed.
+- The repaint regression passes at 1280×720 (462px board), 320×568 (296px), and 844×390 (254px), including four selections, a legal move, and Undo within one animation frame. Browser warning/error logs were empty.
 
 ## Still needs Kevin's playtest
 

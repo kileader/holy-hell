@@ -111,6 +111,8 @@ tests/startup.test.ts Shared logo timing and fresh gamepad press handling
 
 See [the prototype verification record](docs/verification.md) for tested flows and the remaining human playtest questions.
 
+For the controller repaint regression, run the dev server, open `/tests/board-render.html`, and click **Run board repaint check**. It selects and deselects a piece four times, makes a legal move, then undoes it inside one animation frame, checking the board's size immediately after each redraw. This development-only page is excluded from the production build.
+
 The current runtime is sufficient for this board-based slice. Fullscreen and controller input do not require an engine migration. Revisit Godot if native packaging or more elaborate scene animation becomes a concrete priority; the chess/session rules remain separate from rendering.
 
 ## What to playtest

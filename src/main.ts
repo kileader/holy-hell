@@ -165,7 +165,9 @@ function render(): void {
     </section>
     <aside class="mission-panel"><p class="eyebrow">YOUR MISSION</p><h2>${encounter.missionTitle}</h2><p class="mission-objective">${encounter.objective}</p><div class="objective-checks">${encounter.id === 'horsie' ? `<p class="${session.forked ? 'achieved' : ''}">${icon(session.forked ? 'check' : 'target')} Fork king + rook</p><p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} Capture the rook</p>` : `<p class="${session.objectiveComplete ? 'achieved' : ''}">${icon(session.objectiveComplete ? 'check' : 'target')} ${encounter.goalLabel}</p>`}</div><div class="feedback ${session.chess.isCheck() || result === 'lost' ? 'warning' : ''}" role="status"><p>${feedback}</p></div>${encounter.id === 'bishop' ? `<button class="sight-button ${showSight ? 'enabled' : ''}" data-action="sight" aria-pressed="${showSight}" title="Bishop diagonals (V / RB)">${icon('eye')} ${showSight ? 'Hide' : 'Show'} diagonals</button>` : ''}<button class="text-button" data-action="briefing">${icon('book')} Mission & tactic</button><p class="bonus-line">${icon('star')} Bonus: ≤ ${encounter.par} moves.<br/>No hints or undo.</p></aside>
   </div>`;
-  requestAnimationFrame(fitBoard);
+  // Controller actions already run inside an animation frame. Waiting for another
+  // frame paints the rebuilt board at its 0px fallback size and makes it flash.
+  fitBoard();
   renderPrompts();
   if (oldSquare) document.querySelector<HTMLButtonElement>(`[data-square="${oldSquare}"]`)?.focus({ preventScroll: true });
   else if (oldAction && !activeOverlay) document.querySelector<HTMLButtonElement>(`#game [data-action="${oldAction}"]`)?.focus({ preventScroll: true });
